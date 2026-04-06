@@ -10,6 +10,14 @@
 
 ---
 
+## 🎬 Demo 演示影片
+
+[![Open Claude Code WPF Demo](https://img.youtube.com/vi/Wp2fpYDPPt0/maxresdefault.jpg)](https://www.youtube.com/watch?v=Wp2fpYDPPt0)
+
+> 點擊上方縮圖或 [前往 YouTube 觀看](https://www.youtube.com/watch?v=Wp2fpYDPPt0)
+
+---
+
 ## 主畫面
 
 ![Open Claude Code WPF 主畫面](doc/entry.png)
