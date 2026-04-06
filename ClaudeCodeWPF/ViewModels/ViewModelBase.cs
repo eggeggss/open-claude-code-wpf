@@ -7,11 +7,12 @@ namespace OpenClaudeCodeWPF.ViewModels
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void Set<T>(ref T field, T value, [CallerMemberName] string name = null)
+        protected bool Set<T>(ref T field, T value, [CallerMemberName] string name = null)
         {
-            if (Equals(field, value)) return;
+            if (Equals(field, value)) return false;
             field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            return true;
         }
 
         protected void OnPropertyChanged([CallerMemberName] string name = null)

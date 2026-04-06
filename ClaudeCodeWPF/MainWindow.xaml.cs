@@ -1,10 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using OpenClaudeCodeWPF.Models;
 using OpenClaudeCodeWPF.Services;
+using OpenClaudeCodeWPF.ViewModels;
 
 namespace OpenClaudeCodeWPF
 {
@@ -12,25 +12,16 @@ namespace OpenClaudeCodeWPF
     {
         private readonly ChatService _chatService;
         private CancellationTokenSource _cts;
-        private bool _isStreamingEnabled;
-
-        public bool IsStreamingEnabled
-        {
-            get => _isStreamingEnabled;
-            set
-            {
-                _isStreamingEnabled = value;
-                ConfigService.Instance.StreamingEnabled = value;
-            }
-        }
+        private MainWindowViewModel _vm;
 
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = this;
+
+            _vm = new MainWindowViewModel();
+            DataContext = _vm;
 
             _chatService = new ChatService();
-            _isStreamingEnabled = ConfigService.Instance.StreamingEnabled;
 
             WireUpChatService();
         }
@@ -42,19 +33,19 @@ namespace OpenClaudeCodeWPF
                 Dispatcher.InvokeAsync(() =>
                 {
                     ToolOutputPanel.AddToolStart(name, input);
-                    SetStatus($"執行工具: {name}");
+                    _vm.StatusMessage = $"執行工具: {name}";
                 });
             _chatService.OnToolCompleted += (name, id, result) =>
                 Dispatcher.InvokeAsync(() =>
                 {
                     ToolOutputPanel.AddToolResult(name, result);
-                    SetStatus($"工具完成: {name}");
+                    _vm.StatusMessage = $"工具完成: {name}";
                 });
             _chatService.OnToolFailed += (name, id, error) =>
                 Dispatcher.InvokeAsync(() =>
                 {
                     ToolOutputPanel.AddToolError(name, error);
-                    SetStatus($"工具失敗: {name}");
+                    _vm.StatusMessage = $"工具失敗: {name}";
                 });
 
             // Wire up ChatPanel's send action
@@ -108,44 +99,22 @@ namespace OpenClaudeCodeWPF
 
                 case StreamEventType.MessageEnd:
                     ChatPanel.FinalizeAssistantMessage();
-                    SetStatus($"就緒  ·  {ConfigService.Instance.CurrentProvider} / {ConfigService.Instance.CurrentModel}");
+                    _vm.StatusMessage = $"就緒  ·  {ConfigService.Instance.CurrentProvider} / {ConfigService.Instance.CurrentModel}";
                     if (evt.Usage != null)
-                        TokenText.Text = $"↑{evt.Usage.InputTokens}  ↓{evt.Usage.OutputTokens}";
+                        _vm.TokenInfo = $"↑{evt.Usage.InputTokens}  ↓{evt.Usage.OutputTokens}";
                     ChatPanel.SetSendEnabled(true);
                     break;
 
                 case StreamEventType.Error:
                     ChatPanel.ShowError(evt.Error);
-                    SetStatus($"錯誤: {evt.Error}");
+                    _vm.StatusMessage = $"錯誤: {evt.Error}";
                     ChatPanel.SetSendEnabled(true);
                     break;
 
                 case StreamEventType.ContextWarning:
-                    UpdateContextIndicator(evt.ContextPercent, evt.TrimmedCount);
+                    _vm.UpdateContextIndicator(evt.ContextPercent, evt.TrimmedCount);
                     break;
             }
-        }
-
-        /// <summary>更新狀態列的上下文使用率指示器。</summary>
-        private void UpdateContextIndicator(double percent, int trimmedCount)
-        {
-            string label = $"Ctx {percent:F0}%";
-            if (trimmedCount > 0)
-                label += $" ✂{trimmedCount}";
-
-            ContextText.Text = label;
-            ContextText.Visibility = System.Windows.Visibility.Visible;
-
-            // 顏色：綠→黃→橙→紅
-            if (percent >= ContextManager.ErrorThreshold)
-                ContextText.Foreground = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(0xFF, 0x55, 0x55)); // 紅
-            else if (percent >= ContextManager.WarnThreshold)
-                ContextText.Foreground = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(0xFF, 0xCC, 0x44)); // 橙黃
-            else
-                ContextText.Foreground = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(0x88, 0xDD, 0x88)); // 淺綠
         }
 
         private async void OnSendMessage(string message)
@@ -156,7 +125,7 @@ namespace OpenClaudeCodeWPF
             _cts = new CancellationTokenSource();
 
             ChatPanel.SetSendEnabled(false);
-            SetStatus("傳送中...");
+            _vm.StatusMessage = "傳送中...";
 
             var session = ConversationManager.Instance.GetOrCreateActiveSession();
 
@@ -174,13 +143,13 @@ namespace OpenClaudeCodeWPF
             catch (OperationCanceledException)
             {
                 ChatPanel.ShowError("已取消");
-                SetStatus("已取消");
+                _vm.StatusMessage = "已取消";
                 ChatPanel.SetSendEnabled(true);
             }
             catch (Exception ex)
             {
                 ChatPanel.ShowError(ex.Message);
-                SetStatus($"錯誤: {ex.Message}");
+                _vm.StatusMessage = $"錯誤: {ex.Message}";
                 ChatPanel.SetSendEnabled(true);
             }
         }
@@ -188,7 +157,7 @@ namespace OpenClaudeCodeWPF
         private void OnCancelRequested()
         {
             _cts?.Cancel();
-            SetStatus("取消中...");
+            _vm.StatusMessage = "取消中...";
         }
 
         private void HandleSlashCommand(string input)
@@ -239,12 +208,9 @@ namespace OpenClaudeCodeWPF
                     ChatPanel.LoadSession(sess);
                 });
 
-            // Populate providers
-            var providers = new List<string> { "Anthropic", "OpenAI", "AzureOpenAI", "Gemini", "Ollama" };
-            ProviderComboBox.ItemsSource = providers;
+            // Provider ComboBox is populated via VM Providers binding.
+            // Triggering SelectedItem via VM initialises model list through SelectionChanged.
             ProviderComboBox.SelectedItem = ConfigService.Instance.CurrentProvider;
-
-            StreamToggle.IsChecked = IsStreamingEnabled;
 
             // Apply saved font to chat panel
             ChatPanel.UpdateFontSettings(
@@ -254,8 +220,6 @@ namespace OpenClaudeCodeWPF
             // Load or create initial session
             var session = ConversationManager.Instance.GetOrCreateActiveSession();
             ChatPanel.LoadSession(session);
-
-            SetStatus($"就緒  ·  {ConfigService.Instance.CurrentProvider} / {ConfigService.Instance.CurrentModel}");
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -269,45 +233,27 @@ namespace OpenClaudeCodeWPF
 
         private async void ProviderComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            if (ProviderComboBox.SelectedItem == null) return;
-            var provider = ProviderComboBox.SelectedItem.ToString();
-            ConfigService.Instance.CurrentProvider = provider;
+            var provider = ProviderComboBox.SelectedItem?.ToString();
+            if (provider == null) return;
 
-            // Load available models
+            // Keep VM in sync (VM property setter updates ConfigService)
+            _vm.CurrentProvider = provider;
+
             try
             {
                 var p = ModelProviderFactory.Instance.GetProvider(provider);
                 var models = await p.GetAvailableModelsAsync();
-                ModelComboBox.ItemsSource = models;
-                if (models.Count > 0)
-                {
-                    var current = ConfigService.Instance.CurrentModel;
-                    var selected = models.Find(m => m.Id == current) ?? models[0];
-                    ModelComboBox.SelectedItem = selected;
-                }
+                _vm.SetModels(models, ConfigService.Instance.CurrentModel);
             }
             catch (Exception ex)
             {
-                SetStatus($"無法載入模型: {ex.Message}");
-            }
-        }
-
-        private void ModelComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            if (ModelComboBox.SelectedItem is ModelInfo m)
-            {
-                ConfigService.Instance.CurrentModel = m.Id;
-                SetStatus($"就緒  ·  {ConfigService.Instance.CurrentProvider} / {m.Id}");
-                // Persist immediately so restart remembers the model
-                UserSettingsService.Instance.CurrentProvider = ConfigService.Instance.CurrentProvider;
-                UserSettingsService.Instance.CurrentModel    = m.Id;
-                UserSettingsService.Instance.Save();
+                _vm.StatusMessage = $"無法載入模型: {ex.Message}";
             }
         }
 
         private void StreamToggle_Changed(object sender, RoutedEventArgs e)
         {
-            IsStreamingEnabled = StreamToggle.IsChecked ?? true;
+            _vm.IsStreamingEnabled = StreamToggle.IsChecked ?? true;
         }
 
         private void NewChatButton_Click(object sender, RoutedEventArgs e)
@@ -317,9 +263,7 @@ namespace OpenClaudeCodeWPF
             ChatPanel.LoadSession(session);
             ToolOutputPanel.Clear();
             HistoryPanel.Refresh();
-            // Reset context indicator for new session
-            ContextText.Visibility = System.Windows.Visibility.Collapsed;
-            ContextText.Text = "";
+            _vm.ClearContext();
         }
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
@@ -335,9 +279,7 @@ namespace OpenClaudeCodeWPF
             }
         }
 
-        private void SetStatus(string text)
-        {
-            StatusText.Text = text;
-        }
+        /// <summary>Kept for HandleStreamEvent's MessageStart which still calls it inline.</summary>
+        private void SetStatus(string text) => _vm.StatusMessage = text;
     }
 }

@@ -45,10 +45,13 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <ComboBox x:Name="ProviderComboBox" Width="120" Margin="0,0,8,0"
                               Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                              ItemsSource="{Binding Providers}"
+                              SelectedItem="{Binding CurrentProvider, Mode=TwoWay}"
                               SelectionChanged="ProviderComboBox_SelectionChanged"/>
                     <ComboBox x:Name="ModelComboBox" Width="260"
                               Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                              SelectionChanged="ModelComboBox_SelectionChanged">
+                              ItemsSource="{Binding AvailableModels}"
+                              SelectedItem="{Binding SelectedModel, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
@@ -207,13 +210,16 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="StatusText" Grid.Column="0"
-                           Text="就緒" Foreground="White" FontSize="11"
+                           Text="{Binding StatusMessage}" Foreground="White" FontSize="11"
                            VerticalAlignment="Center" Margin="8,0"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="ContextText" FontSize="11"
-                               VerticalAlignment="Center" Margin="0,0,10,0"
-                               Visibility="Collapsed"/>
+                               Text="{Binding ContextLabel}"
+                               Foreground="{Binding ContextColor}"
+                               Visibility="{Binding IsContextVisible, Converter={StaticResource BoolToVis}}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock x:Name="TokenText"
+                               Text="{Binding TokenInfo}"
                                Foreground="White" FontSize="11"
                                VerticalAlignment="Center" Margin="8,0"/>
                 </StackPanel>
