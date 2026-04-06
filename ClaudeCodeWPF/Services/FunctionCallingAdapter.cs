@@ -116,19 +116,54 @@ namespace OpenClaudeCodeWPF.Services
                 if (msg.Role == "tool")
                 {
                     // Tool result: user role with tool_result content block
-                    arr.Add(new JObject
+                    if (msg.ImageBlocks != null && msg.ImageBlocks.Count > 0)
                     {
-                        ["role"] = "user",
-                        ["content"] = new JArray
+                        // Multimodal tool result: include text + images in content array
+                        var toolResultContent = new JArray();
+                        toolResultContent.Add(new JObject { ["type"] = "text", ["text"] = msg.Content ?? "" });
+                        foreach (var img in msg.ImageBlocks)
                         {
-                            new JObject
+                            toolResultContent.Add(new JObject
                             {
-                                ["type"] = "tool_result",
-                                ["tool_use_id"] = msg.ToolCallId,
-                                ["content"] = msg.Content ?? ""
-                            }
+                                ["type"] = "image",
+                                ["source"] = new JObject
+                                {
+                                    ["type"] = "base64",
+                                    ["media_type"] = img.MimeType ?? "image/png",
+                                    ["data"] = img.Base64Data ?? ""
+                                }
+                            });
                         }
-                    });
+                        arr.Add(new JObject
+                        {
+                            ["role"] = "user",
+                            ["content"] = new JArray
+                            {
+                                new JObject
+                                {
+                                    ["type"] = "tool_result",
+                                    ["tool_use_id"] = msg.ToolCallId,
+                                    ["content"] = toolResultContent
+                                }
+                            }
+                        });
+                    }
+                    else
+                    {
+                        arr.Add(new JObject
+                        {
+                            ["role"] = "user",
+                            ["content"] = new JArray
+                            {
+                                new JObject
+                                {
+                                    ["type"] = "tool_result",
+                                    ["tool_use_id"] = msg.ToolCallId,
+                                    ["content"] = msg.Content ?? ""
+                                }
+                            }
+                        });
+                    }
                 }
                 else if (msg.Role == "assistant" && msg.ToolCalls != null && msg.ToolCalls.Count > 0)
                 {
@@ -181,6 +216,24 @@ namespace OpenClaudeCodeWPF.Services
                         ["tool_call_id"] = msg.ToolCallId,
                         ["content"] = msg.Content ?? ""
                     });
+                    // OpenAI tool messages cannot contain images; add a follow-up user message
+                    if (msg.ImageBlocks != null && msg.ImageBlocks.Count > 0)
+                    {
+                        var imageContent = new JArray();
+                        imageContent.Add(new JObject { ["type"] = "text", ["text"] = "Document pages (from ReadDocument tool result):" });
+                        foreach (var img in msg.ImageBlocks)
+                        {
+                            imageContent.Add(new JObject
+                            {
+                                ["type"] = "image_url",
+                                ["image_url"] = new JObject
+                                {
+                                    ["url"] = $"data:{img.MimeType ?? "image/png"};base64,{img.Base64Data ?? ""}"
+                                }
+                            });
+                        }
+                        arr.Add(new JObject { ["role"] = "user", ["content"] = imageContent });
+                    }
                 }
                 else if (msg.Role == "assistant" && msg.ToolCalls != null && msg.ToolCalls.Count > 0)
                 {
@@ -245,6 +298,24 @@ namespace OpenClaudeCodeWPF.Services
                             }
                         }
                     });
+                    // Add images as a follow-up user message
+                    if (msg.ImageBlocks != null && msg.ImageBlocks.Count > 0)
+                    {
+                        var parts = new JArray();
+                        parts.Add(new JObject { ["text"] = "Document pages from ReadDocument:" });
+                        foreach (var img in msg.ImageBlocks)
+                        {
+                            parts.Add(new JObject
+                            {
+                                ["inlineData"] = new JObject
+                                {
+                                    ["mimeType"] = img.MimeType ?? "image/png",
+                                    ["data"] = img.Base64Data ?? ""
+                                }
+                            });
+                        }
+                        arr.Add(new JObject { ["role"] = "user", ["parts"] = parts });
+                    }
                 }
                 else if (msg.Role == "assistant" && msg.ToolCalls != null && msg.ToolCalls.Count > 0)
                 {

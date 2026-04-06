@@ -28,6 +28,9 @@ namespace OpenClaudeCodeWPF.Models
         [JsonIgnore]
         public TokenUsage Usage { get; set; }
 
+        [JsonIgnore]
+        public List<ImageBlock> ImageBlocks { get; set; }
+
         public static ChatMessage User(string content)
         {
             return new ChatMessage { Role = "user", Content = content };
@@ -46,6 +49,11 @@ namespace OpenClaudeCodeWPF.Models
         public static ChatMessage ToolResponse(string toolCallId, string content, string name = null)
         {
             return new ChatMessage { Role = "tool", ToolCallId = toolCallId, Content = content, Name = name };
+        }
+
+        public static ChatMessage UserWithImages(string text, List<ImageBlock> images)
+        {
+            return new ChatMessage { Role = "user", Content = text, ImageBlocks = images };
         }
     }
 

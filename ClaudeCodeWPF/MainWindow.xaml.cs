@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -33,19 +34,22 @@ namespace OpenClaudeCodeWPF
                 Dispatcher.InvokeAsync(() =>
                 {
                     ToolOutputPanel.AddToolStart(name, input);
-                    _vm.StatusMessage = $"執行工具: {name}";
+                    ChatPanel.StartToolAnimation(id);
+                    _vm.StatusMessage = $"⚙️ 執行: {name}";
                 });
             _chatService.OnToolCompleted += (name, id, result) =>
                 Dispatcher.InvokeAsync(() =>
                 {
                     ToolOutputPanel.AddToolResult(name, result);
-                    _vm.StatusMessage = $"工具完成: {name}";
+                    ChatPanel.CompleteToolBubble(id, true);
+                    _vm.StatusMessage = $"✅ 完成: {name}";
                 });
             _chatService.OnToolFailed += (name, id, error) =>
                 Dispatcher.InvokeAsync(() =>
                 {
                     ToolOutputPanel.AddToolError(name, error);
-                    _vm.StatusMessage = $"工具失敗: {name}";
+                    ChatPanel.CompleteToolBubble(id, false);
+                    _vm.StatusMessage = $"❌ 失敗: {name}";
                 });
 
             // Wire up ChatPanel's send action
@@ -63,6 +67,8 @@ namespace OpenClaudeCodeWPF
             });
             slashSvc.RefreshHistory  = () => Dispatcher.Invoke(() => HistoryPanel.Refresh());
 
+            // Wire up HistoryPanel toggle → sidebar collapse
+            HistoryPanel.OnToggleRequested += () => ToggleSidebar();
             HistoryPanel.Initialize(ConversationManager.Instance);
             HistoryPanel.OnSessionSelected += HistoryPanel_SessionSelected;
 
@@ -90,7 +96,7 @@ namespace OpenClaudeCodeWPF
 
                 case StreamEventType.ToolCallStart:
                     if (evt.ToolCall != null)
-                        ChatPanel.ShowToolCall(evt.ToolCall.Name, evt.ToolCall.Arguments?.ToString());
+                        ChatPanel.ShowToolCall(evt.ToolCall.Name, evt.ToolCall.Id, evt.ToolCall.Arguments?.ToString());
                     break;
 
                 case StreamEventType.ToolResultsReady:
@@ -103,6 +109,10 @@ namespace OpenClaudeCodeWPF
                     if (evt.Usage != null)
                         _vm.TokenInfo = $"↑{evt.Usage.InputTokens}  ↓{evt.Usage.OutputTokens}";
                     ChatPanel.SetSendEnabled(true);
+                    // Fire-and-forget AI title generation for new conversations
+#pragma warning disable CS4014
+                    TryGenerateTitleAsync();
+#pragma warning restore CS4014
                     break;
 
                 case StreamEventType.Error:
@@ -217,6 +227,16 @@ namespace OpenClaudeCodeWPF
                 ConfigService.Instance.ChatFontSize,
                 ConfigService.Instance.ChatFontFamily);
 
+            // Restore sidebar collapsed/expanded state (default: collapsed)
+            var svc = UserSettingsService.Instance;
+            bool collapsed = svc.SidebarCollapsed;
+            HistoryPanel.SetCollapsed(collapsed);
+            if (collapsed)
+            {
+                LeftPanelColumn.Width    = new System.Windows.GridLength(0);
+                LeftSplitterColumn.Width = new System.Windows.GridLength(0);
+            }
+
             // Load or create initial session
             var session = ConversationManager.Instance.GetOrCreateActiveSession();
             ChatPanel.LoadSession(session);
@@ -281,5 +301,68 @@ namespace OpenClaudeCodeWPF
 
         /// <summary>Kept for HandleStreamEvent's MessageStart which still calls it inline.</summary>
         private void SetStatus(string text) => _vm.StatusMessage = text;
+
+        private void SidebarToggleBtn_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleSidebar();
+        }
+
+        // ── Sidebar collapse / expand ─────────────────────────────────────────
+
+        private void ToggleSidebar()
+        {
+            var svc       = UserSettingsService.Instance;
+            bool collapse = LeftPanelColumn.Width.Value > 0;
+
+            if (collapse)
+            {
+                // Save width before collapsing so we can restore it later
+                svc.SidebarWidth         = LeftPanelColumn.Width.Value;
+                LeftPanelColumn.Width    = new System.Windows.GridLength(0);
+                LeftSplitterColumn.Width = new System.Windows.GridLength(0);
+                HistoryPanel.SetCollapsed(true);
+                svc.SidebarCollapsed = true;
+            }
+            else
+            {
+                double restoreWidth = svc.SidebarWidth > 0 ? svc.SidebarWidth : 240;
+                LeftPanelColumn.Width    = new System.Windows.GridLength(restoreWidth);
+                LeftSplitterColumn.Width = new System.Windows.GridLength(4);
+                HistoryPanel.SetCollapsed(false);
+                svc.SidebarCollapsed = false;
+            }
+
+            svc.Save();
+        }
+
+        // ── AI conversation title generation ─────────────────────────────────
+
+        /// <summary>
+        /// After the first AI response in a new session, ask AI to generate
+        /// a short descriptive title. Fire-and-forget; fallback to text truncation.
+        /// </summary>
+        private async Task TryGenerateTitleAsync()
+        {
+            var session = ConversationManager.Instance.GetOrCreateActiveSession();
+            if (session.Title != "新對話") return;
+
+            var firstUser = session.Messages.FirstOrDefault(m =>
+                m.Role == "user" && !string.IsNullOrWhiteSpace(m.Content));
+            var firstAssistant = session.Messages.FirstOrDefault(m =>
+                m.Role == "assistant" && !string.IsNullOrWhiteSpace(m.Content));
+            if (firstUser == null) return;
+
+            var title = await TitleGeneratorService.Instance.GenerateTitleAsync(
+                firstUser.Content, firstAssistant?.Content ?? "");
+
+            if (!string.IsNullOrWhiteSpace(title))
+                session.Title = title;
+            else
+                session.UpdateTitle(); // fallback: truncate first message
+
+            session.UpdatedAt = DateTime.UtcNow;
+            ConversationManager.Instance.SaveSession(session);
+            Dispatcher.InvokeAsync(() => HistoryPanel.Refresh());
+        }
     }
 }

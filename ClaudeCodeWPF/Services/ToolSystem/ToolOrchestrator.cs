@@ -52,7 +52,10 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem
                     var content = result.IsSuccess ? result.Content : $"Error: {result.Error}";
 
                     OnToolCompleted?.Invoke(tc.Name, tc.Id, content);
-                    results.Add(ChatMessage.ToolResponse(tc.Id, content, tc.Name));
+                    var resultMsg = ChatMessage.ToolResponse(tc.Id, content, tc.Name);
+                    if (result.Images != null && result.Images.Count > 0)
+                        resultMsg.ImageBlocks = result.Images;
+                    results.Add(resultMsg);
                 }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception ex)

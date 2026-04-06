@@ -166,6 +166,8 @@ namespace OpenClaudeCodeWPF.Services
             set => _currentModel = value;
         }
 
+        public bool CurrentModelSupportsVision { get; set; } = false;
+
         private string GetCurrentDefaultModel()
         {
             switch (CurrentProvider)

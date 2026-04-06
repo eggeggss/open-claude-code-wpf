@@ -32,6 +32,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem
             Register(new WebSearchTool());
             Register(new AgentTool());
             Register(new OpenEdgeTool());
+            Register(new ReadDocumentTool());
         }
 
         public void Register(IToolExecutor tool)

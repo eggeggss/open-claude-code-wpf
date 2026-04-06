@@ -31,7 +31,6 @@ namespace OpenClaudeCodeWPF.Views
         private UIElement _thinkingContent;
         private TextBlock _thinkingHeaderLabel;
         private TextBlock _thinkingArrow;
-        private bool _thinkingExpanded = true;
         private bool _assistantContainerCreated;
 
         // Typing bubble
@@ -39,6 +38,18 @@ namespace OpenClaudeCodeWPF.Views
         private Ellipse[] _typingDots;
         private DispatcherTimer _typingTimer;
         private int _typingFrame;
+
+        // ── Tool execution bubble tracking ────────────────────────────────
+        private class ToolBubbleState
+        {
+            public TextBlock IconLabel;
+            public TextBlock StatusLabel;
+            public DispatcherTimer Timer;
+            public DateTime StartTime;
+        }
+        private readonly Dictionary<string, ToolBubbleState> _toolBubbles
+            = new Dictionary<string, ToolBubbleState>();
+        private static readonly string[] DotFrames = { "·  ", "·· ", "···" };
 
         // Font settings
         private double _msgFontSize = 13;
@@ -173,8 +184,10 @@ namespace OpenClaudeCodeWPF.Views
             _thinkingContent = null;
             _thinkingHeaderLabel = null;
             _thinkingArrow = null;
-            _thinkingExpanded = true;
             _assistantContainerCreated = false;
+            // Stop any leftover tool timers from the previous turn
+            foreach (var s in _toolBubbles.Values) s.Timer?.Stop();
+            _toolBubbles.Clear();
             ShowTypingBubble();  // show bubble AFTER user message is in the panel
             ScrollToBottom();
         }
@@ -332,31 +345,153 @@ namespace OpenClaudeCodeWPF.Views
             ScrollToBottom();
         }
 
-        public void ShowToolCall(string toolName, string input)
+        /// <summary>
+        /// Shows a tool call bubble. toolId is used to track the bubble for live updates.
+        /// Call StartToolAnimation(toolId) when execution begins,
+        /// and CompleteToolBubble(toolId, success) when it finishes.
+        /// </summary>
+        public void ShowToolCall(string toolName, string toolId, string input)
         {
             EnsureAssistantContainer();
+
+            // ── Outer container ────────────────────────────────────────────
             var border = new Border
             {
-                Background = new SolidColorBrush(ThemeService.Current.ToolCallBg),
-                BorderBrush = new SolidColorBrush(ThemeService.Current.Border),
+                Background      = new SolidColorBrush(ThemeService.Current.ToolCallBg),
+                BorderBrush     = new SolidColorBrush(ThemeService.Current.Border),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(4),
-                Margin = new Thickness(0, 4, 0, 4),
-                Padding = new Thickness(8, 4, 8, 4)
+                CornerRadius    = new CornerRadius(4),
+                Margin          = new Thickness(0, 4, 0, 4),
+                Padding         = new Thickness(8, 6, 8, 6)
             };
 
-            var tb = new TextBlock
+            var outerStack = new StackPanel();
+
+            // ── Header row: icon + tool name + status indicator ────────────
+            var headerGrid = new Grid();
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var iconLabel = new TextBlock
             {
-                Text = $"🔧 {toolName}",
-                Foreground = new SolidColorBrush(ThemeService.Current.Accent),
-                FontSize = 12, FontFamily = new FontFamily("Consolas")
+                Text       = "🔧",
+                FontSize   = 12,
+                VerticalAlignment = VerticalAlignment.Center
             };
 
-            border.Child = tb;
+            var nameLabel = new TextBlock
+            {
+                Text         = $" {toolName}",
+                Foreground   = new SolidColorBrush(ThemeService.Current.Accent),
+                FontSize     = 12,
+                FontFamily   = new FontFamily("Consolas"),
+                FontWeight   = FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var statusLabel = new TextBlock
+            {
+                Text              = "準備中",
+                FontSize          = 11,
+                FontFamily        = new FontFamily("Consolas"),
+                Foreground        = new SolidColorBrush(ThemeService.Current.TextSecondary),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+
+            Grid.SetColumn(iconLabel,   0);
+            Grid.SetColumn(nameLabel,   1);
+            Grid.SetColumn(statusLabel, 2);
+            headerGrid.Children.Add(iconLabel);
+            headerGrid.Children.Add(nameLabel);
+            headerGrid.Children.Add(statusLabel);
+            outerStack.Children.Add(headerGrid);
+
+            // ── Input preview (truncated) ─────────────────────────────────
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                string preview = input.Replace("\r\n", " ").Replace('\n', ' ').Trim();
+                if (preview.Length > 80) preview = preview.Substring(0, 80) + "…";
+
+                var inputLabel = new TextBlock
+                {
+                    Text         = preview,
+                    FontSize     = 11,
+                    FontFamily   = new FontFamily("Consolas"),
+                    Foreground   = new SolidColorBrush(ThemeService.Current.TextSecondary),
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin       = new Thickness(16, 2, 0, 0),
+                    Opacity      = 0.75
+                };
+                outerStack.Children.Add(inputLabel);
+            }
+
+            border.Child = outerStack;
 
             var parent = _currentAssistantBlock?.Parent as StackPanel;
             parent?.Children.Add(border);
+
+            // Register the bubble state by toolId
+            if (!string.IsNullOrEmpty(toolId))
+            {
+                _toolBubbles[toolId] = new ToolBubbleState
+                {
+                    IconLabel   = iconLabel,
+                    StatusLabel = statusLabel,
+                    StartTime   = DateTime.Now
+                };
+            }
+
             ScrollToBottom();
+        }
+
+        /// <summary>Start the animated dots on a tool bubble (call when execution begins).</summary>
+        public void StartToolAnimation(string toolId)
+        {
+            if (string.IsNullOrEmpty(toolId) || !_toolBubbles.TryGetValue(toolId, out var state))
+                return;
+
+            state.StartTime = DateTime.Now;
+            state.IconLabel.Text = "⚙️";
+
+            int frame = 0;
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
+            timer.Tick += (s, e) =>
+            {
+                state.StatusLabel.Text = DotFrames[frame % DotFrames.Length];
+                frame++;
+            };
+            timer.Start();
+            state.Timer = timer;
+            state.StatusLabel.Text = DotFrames[0];
+        }
+
+        /// <summary>Finalize a tool bubble with success or failure (call when execution ends).</summary>
+        public void CompleteToolBubble(string toolId, bool success)
+        {
+            if (string.IsNullOrEmpty(toolId) || !_toolBubbles.TryGetValue(toolId, out var state))
+                return;
+
+            state.Timer?.Stop();
+            state.Timer = null;
+
+            double elapsed = (DateTime.Now - state.StartTime).TotalSeconds;
+
+            if (success)
+            {
+                state.IconLabel.Text   = "✅";
+                state.StatusLabel.Text = $"{elapsed:F1}s";
+                state.StatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(0x4C, 0xAF, 0x50));
+            }
+            else
+            {
+                state.IconLabel.Text   = "❌";
+                state.StatusLabel.Text = "失敗";
+                state.StatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x43, 0x36));
+            }
+
+            _toolBubbles.Remove(toolId);
         }
 
         public void ShowToolResultsDivider()
@@ -379,7 +514,7 @@ namespace OpenClaudeCodeWPF.Views
             AppendAssistantText(content ?? "");
             if (toolCalls != null)
                 foreach (var tc in toolCalls)
-                    ShowToolCall(tc.Name, tc.Arguments?.ToString());
+                    ShowToolCall(tc.Name, tc.Id, tc.Arguments?.ToString());
             FinalizeAssistantMessage();
         }
 
@@ -406,7 +541,6 @@ namespace OpenClaudeCodeWPF.Views
             _thinkingContent        = null;
             _thinkingHeaderLabel    = null;
             _thinkingArrow          = null;
-            _thinkingExpanded       = true;
             _assistantContainerCreated = false;
             RemoveTypingBubble();
             ThinkingIndicator.Visibility = Visibility.Collapsed;

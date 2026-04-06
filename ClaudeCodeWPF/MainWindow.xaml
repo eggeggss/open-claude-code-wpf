@@ -36,7 +36,14 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- App icon + title -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0">
+                    <!-- Sidebar toggle: always visible, toggles history panel -->
+                    <Button x:Name="SidebarToggleBtn"
+                            Content="☰" Width="26" Height="26" Margin="0,0,6,0"
+                            Background="Transparent" BorderThickness="0"
+                            Foreground="{DynamicResource PrimaryTextBrush}"
+                            FontSize="15" Cursor="Hand" ToolTip="摺疊/展開側欄"
+                            Click="SidebarToggleBtn_Click"/>
                     <TextBlock Text="◆" Foreground="{DynamicResource AccentBrush}" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBlock Text="Open Claude Code WPF" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -149,8 +156,8 @@
         <!-- Main Content (3 panels) -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="240" MinWidth="160" MaxWidth="400"/>
-                <ColumnDefinition Width="4"/>
+                <ColumnDefinition x:Name="LeftPanelColumn"    Width="240" MinWidth="0" MaxWidth="400"/>
+                <ColumnDefinition x:Name="LeftSplitterColumn" Width="4"/>
                 <ColumnDefinition Width="*" MinWidth="300"/>
                 <ColumnDefinition Width="4"/>
                 <ColumnDefinition Width="320" MinWidth="200" MaxWidth="600" x:Name="RightPanelColumn"/>

@@ -37,6 +37,9 @@ namespace OpenClaudeCodeWPF.Services
             public string OllamaModels     { get; set; } = "";
             // Azure OpenAI multi-node (each line: Name|Endpoint|ApiKey|Deployment|ApiVersion)
             public string AzureOpenAINodes { get; set; } = "";
+            // UI layout state
+            public bool   SidebarCollapsed { get; set; } = true;
+            public double SidebarWidth     { get; set; } = 240;
         }
 
         private UserSettings _settings;
@@ -100,6 +103,24 @@ namespace OpenClaudeCodeWPF.Services
         {
             get => _settings.ThemeName;
             set { _settings.ThemeName = value; }
+        }
+
+        public string AzureOpenAINodes
+        {
+            get => _settings.AzureOpenAINodes;
+            set { _settings.AzureOpenAINodes = value; }
+        }
+
+        public bool SidebarCollapsed
+        {
+            get => _settings.SidebarCollapsed;
+            set { _settings.SidebarCollapsed = value; }
+        }
+
+        public double SidebarWidth
+        {
+            get => _settings.SidebarWidth;
+            set { _settings.SidebarWidth = value; }
         }
 
         // ── Persistence ─────────────────────────────────────────────────────

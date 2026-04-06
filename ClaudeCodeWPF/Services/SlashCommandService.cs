@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using OpenClaudeCodeWPF.Models;
 
 namespace OpenClaudeCodeWPF.Services
@@ -49,7 +50,7 @@ namespace OpenClaudeCodeWPF.Services
             {
                 case "help":    HandleHelp();              return true;
                 case "clear":   HandleClear();             return true;
-                case "compact": HandleCompact();           return true;
+                case "compact": _ = HandleCompactAsync(args); return true;
                 case "context": HandleContext();           return true;
                 case "export":  HandleExport(args);        return true;
                 case "rename":  HandleRename(args);        return true;
@@ -70,7 +71,8 @@ namespace OpenClaudeCodeWPF.Services
             sb.AppendLine("━━━ 可用指令 ━━━━━━━━━━━━━━━━━━━━━");
             sb.AppendLine("/help              顯示此說明");
             sb.AppendLine("/clear             清除對話歷史（保留 session）");
-            sb.AppendLine("/compact           壓縮上下文：移除最舊輪次直到 70% 以下");
+            sb.AppendLine("/compact           AI 摘要壓縮：用模型生成摘要，清除舊訊息並以摘要取代");
+            sb.AppendLine("/compact <指示>    同上，附加自訂摘要指示（例如：/compact 重點關注架構決策）");
             sb.AppendLine("/context           顯示目前上下文視窗使用量");
             sb.AppendLine("/cost              顯示本次 session 的 token 用量統計");
             sb.AppendLine("/export            將對話匯出到剪貼簿（純文字）");
@@ -93,7 +95,7 @@ namespace OpenClaudeCodeWPF.Services
             Msg($"✓ 已清除 {count} 則訊息。上下文已重置。", false);
         }
 
-        private void HandleCompact()
+        private async Task HandleCompactAsync(string customInstructions)
         {
             var session = ConversationManager.Instance.ActiveSession;
             if (session == null || session.Messages.Count == 0)
@@ -106,23 +108,42 @@ namespace OpenClaudeCodeWPF.Services
                 ConfigService.Instance.Language);
             var provider = ConfigService.Instance.CurrentProvider;
 
-            // 計算壓縮前
-            double before = ContextManager.GetUsagePercent(session.Messages, provider, systemPrompt);
-            int beforeCount = session.Messages.Count;
+            double before     = ContextManager.GetUsagePercent(session.Messages, provider, systemPrompt);
+            int    beforeCount = session.Messages.Count;
 
-            // 執行截斷（目標 70%，即使目前低於 80% 也強制執行到 70%）
-            int trimmed = ContextManager.TrimToTarget(session.Messages, provider, systemPrompt, 70.0);
+            Msg($"⏳ 正在生成對話摘要（{beforeCount} 則訊息，{before:F0}% 上下文）…", false);
 
-            double after = ContextManager.GetUsagePercent(session.Messages, provider, systemPrompt);
+            // 呼叫 AI 生成摘要
+            var snapshot = new List<ChatMessage>(session.Messages);
+            string summary = await CompactService.SummarizeAsync(
+                snapshot,
+                string.IsNullOrWhiteSpace(customInstructions) ? null : customInstructions);
+
+            if (summary == null)
+            {
+                // AI 摘要失敗 → fallback：舊式截斷
+                Msg("⚠ AI 摘要失敗，改用截斷模式…", true);
+                int trimmed = ContextManager.TrimToTarget(session.Messages, provider, systemPrompt, 70.0);
+                double after = ContextManager.GetUsagePercent(session.Messages, provider, systemPrompt);
+                ConversationManager.Instance.SaveSession(session);
+
+                if (trimmed == 0)
+                    Msg($"ℹ 上下文已在 {before:F0}%，無需壓縮。", false);
+                else
+                {
+                    Msg($"✓ 截斷完成：{before:F0}% → {after:F0}%（移除 {trimmed} 則舊訊息）", false);
+                    RefreshChat?.Invoke();
+                }
+                return;
+            }
+
+            // 套用摘要：清除舊訊息，插入摘要邊界訊息對
+            CompactService.ApplySummary(session.Messages, summary);
             ConversationManager.Instance.SaveSession(session);
 
-            if (trimmed == 0)
-                Msg($"ℹ 上下文已在 {before:F0}%，無需壓縮。", false);
-            else
-            {
-                Msg($"✓ 已壓縮上下文：{before:F0}% → {after:F0}%（移除 {trimmed} 則舊訊息）", false);
-                RefreshChat?.Invoke();
-            }
+            double afterPct = ContextManager.GetUsagePercent(session.Messages, provider, systemPrompt);
+            Msg($"✓ 已壓縮上下文：{before:F0}% → {afterPct:F0}%（{beforeCount} 則訊息 → 摘要{session.Messages.Count} 則）", false);
+            RefreshChat?.Invoke();
         }
 
         private void HandleContext()
@@ -149,7 +170,7 @@ namespace OpenClaudeCodeWPF.Services
             sb.AppendLine($"          {bar}");
             sb.AppendLine($"訊息數量 : {messages.Count} 則");
             if (pct > ContextManager.WarnThreshold)
-                sb.AppendLine("→ 建議執行 /compact 壓縮上下文");
+                sb.AppendLine("→ 建議執行 /compact 進行 AI 摘要壓縮");
             sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             Msg(sb.ToString(), false);
         }

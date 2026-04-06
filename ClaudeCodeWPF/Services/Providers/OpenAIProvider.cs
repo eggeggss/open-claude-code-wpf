@@ -59,7 +59,8 @@ namespace OpenClaudeCodeWPF.Services.Providers
                             await Task.Delay(1000 * (int)Math.Pow(2, retry), cancellationToken);
                             continue;
                         }
-                        throw new Exception($"{ProviderName} API error {response.StatusCode}: {responseText}");
+                        var errBody = await response.Content.ReadAsStringAsync();
+                        throw new Exception(ParseErrorMessage(errBody, response.StatusCode.ToString()));
                     }
 
                     return ParseOpenAIResponse(JObject.Parse(responseText));
@@ -96,7 +97,7 @@ namespace OpenClaudeCodeWPF.Services.Providers
             if (!response.IsSuccessStatusCode)
             {
                 var err = await response.Content.ReadAsStringAsync();
-                onEvent(StreamEvent.ErrorEvent($"{ProviderName} error {response.StatusCode}: {err}"));
+                onEvent(StreamEvent.ErrorEvent(ParseErrorMessage(err, response.StatusCode.ToString())));
                 return;
             }
 
@@ -240,15 +241,61 @@ namespace OpenClaudeCodeWPF.Services.Providers
             }
         }
 
+        private string ParseErrorMessage(string rawJson, string statusCode)
+        {
+            try
+            {
+                var obj = JObject.Parse(rawJson);
+                var msg = obj["error"]?["message"]?.ToString();
+                if (!string.IsNullOrEmpty(msg))
+                {
+                    // Non-chat model: friendly hint
+                    if (msg.Contains("not a chat model") || msg.Contains("v1/chat/completions") || msg.Contains("v1/completions"))
+                        return $"模型不支援 Chat Completions API。\n請改用支援對話的模型（如 gpt-4o、gpt-4o-mini）。\n\n錯誤詳情：{msg}";
+
+                    // Context length exceeded
+                    if (msg.Contains("context_length_exceeded") || msg.Contains("maximum context length"))
+                        return $"訊息超過模型的上下文長度限制。請使用 /compact 壓縮對話記錄。\n\n錯誤詳情：{msg}";
+
+                    return $"{ProviderName} 錯誤 ({statusCode}): {msg}";
+                }
+            }
+            catch { }
+            return $"{ProviderName} error {statusCode}: {rawJson}";
+        }
+
         private static bool IsChatModel(string id)
         {
-            // Keep models that look like chat/completion capable
-            if (id.StartsWith("gpt-"))      return true;
+            // Exclude non-chat models: embeddings, audio, image generation, legacy completions
+            if (id.Contains("embedding"))   return false;
+            if (id.Contains("whisper"))     return false;
+            if (id.Contains("dall-e"))      return false;
+            if (id.Contains("tts"))         return false;
+            if (id.Contains("transcribe"))  return false;
+            if (id.Contains("search"))      return false;
+            if (id.Contains("similarity"))  return false;
+            if (id.Contains("instruct"))    return false; // e.g. gpt-3.5-turbo-instruct uses /v1/completions
+            // Legacy base models (non-chat): babbage, davinci, curie, ada, text-*
+            if (id.StartsWith("babbage"))   return false;
+            if (id.StartsWith("davinci"))   return false;
+            if (id.StartsWith("curie"))     return false;
+            if (id.StartsWith("ada"))       return false;
+            if (id.StartsWith("text-"))     return false;
+            if (id.StartsWith("code-"))     return false;
+
+            // Keep known chat/reasoning model families
+            if (id.StartsWith("gpt-"))
+            {
+                // gpt-5.x series uses Responses API (/v1/responses), not chat completions
+                // Pattern: gpt-5.X-name where X is a digit
+                if (System.Text.RegularExpressions.Regex.IsMatch(id, @"^gpt-5\.\d"))
+                    return false;
+                return true;
+            }
             if (id.StartsWith("o1"))        return true;
             if (id.StartsWith("o3"))        return true;
             if (id.StartsWith("o4"))        return true;
             if (id.StartsWith("chatgpt-"))  return true;
-            // Skip: text-embedding-*, whisper-*, dall-e-*, tts-*, babbage-*, davinci-*, curie-*
             return false;
         }
 

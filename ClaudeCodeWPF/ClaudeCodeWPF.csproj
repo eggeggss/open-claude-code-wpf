@@ -45,6 +45,7 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -118,6 +119,7 @@
     <!-- Models -->
     <Compile Include="Models\ChatMessage.cs" />
     <Compile Include="Models\ConversationSession.cs" />
+    <Compile Include="Models\ImageBlock.cs" />
     <Compile Include="Models\ModelConfig.cs" />
     <Compile Include="Models\StreamEvent.cs" />
     <Compile Include="Models\ToolDefinition.cs" />
@@ -134,6 +136,8 @@
     <Compile Include="Services\ModelProviderFactory.cs" />
     <Compile Include="Services\FunctionCallingAdapter.cs" />
     <Compile Include="Services\ChatService.cs" />
+    <Compile Include="Services\CompactService.cs" />
+    <Compile Include="Services\TitleGeneratorService.cs" />
     <Compile Include="Services\ContextManager.cs" />
     <Compile Include="Services\SlashCommandService.cs" />
     <Compile Include="Services\ConfigService.cs" />
@@ -142,6 +146,7 @@
     <Compile Include="Services\ConversationManager.cs" />
     <Compile Include="Services\HistoryService.cs" />
     <Compile Include="Services\SystemPromptService.cs" />
+    <Compile Include="Services\DocumentProcessing\DocumentExtractor.cs" />
     <!-- Providers -->
     <Compile Include="Services\Providers\AnthropicProvider.cs" />
     <Compile Include="Services\Providers\OpenAIProvider.cs" />
@@ -165,6 +170,7 @@
     <Compile Include="Services\ToolSystem\Tools\AgentTool.cs" />
     <Compile Include="Services\ToolSystem\Tools\WebFetchTool.cs" />
     <Compile Include="Services\ToolSystem\Tools\WebSearchTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\ReadDocumentTool.cs" />
     <!-- MCP -->
     <Compile Include="Services\MCP\MCPClient.cs" />
     <Compile Include="Services\MCP\MCPConnectionManager.cs" />

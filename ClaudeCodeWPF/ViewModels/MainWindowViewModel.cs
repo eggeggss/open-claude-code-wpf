@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows.Media;
@@ -82,6 +83,7 @@ namespace OpenClaudeCodeWPF.ViewModels
             {
                 if (!Set(ref _selectedModel, value) || value == null) return;
                 ConfigService.Instance.CurrentModel = value.Id;
+                ConfigService.Instance.CurrentModelSupportsVision = value.SupportsVision;
                 StatusMessage = $"就緒  ·  {CurrentProvider} / {value.Id}";
                 UserSettingsService.Instance.CurrentProvider = CurrentProvider;
                 UserSettingsService.Instance.CurrentModel    = value.Id;
@@ -130,19 +132,40 @@ namespace OpenClaudeCodeWPF.ViewModels
 
         /// <summary>
         /// Replace the model list; select the preferred model or fall back to index 0.
+        /// If the preferred model is not in the fetched list (e.g. custom/private model),
+        /// insert it at the top so the user's selection is always preserved.
         /// Sets the backing field directly to avoid triggering the persistence side-effect.
         /// </summary>
         public void SetModels(List<ModelInfo> models, string preferredId = null)
         {
+            // If the saved model isn't in the fetched list, insert it as a custom entry
+            // so the user's previous selection is always honoured on restart.
+            if (!string.IsNullOrEmpty(preferredId) &&
+                !models.Exists(m => string.Equals(m.Id, preferredId, StringComparison.OrdinalIgnoreCase)))
+            {
+                models.Insert(0, new ModelInfo
+                {
+                    Id              = preferredId,
+                    DisplayName     = preferredId,
+                    Provider        = CurrentProvider,
+                    MaxTokens       = 8192,
+                    SupportsTools   = true,
+                    SupportsVision  = false,
+                    SupportsThinking = false
+                });
+            }
+
             AvailableModels = new ObservableCollection<ModelInfo>(models);
             if (models.Count == 0) return;
 
-            var match = models.Find(m => m.Id == preferredId) ?? models[0];
+            var match = models.Find(m => string.Equals(m.Id, preferredId, StringComparison.OrdinalIgnoreCase))
+                        ?? models[0];
             // Set backing field so we don't double-save on initial population
             _selectedModel = match;
             OnPropertyChanged(nameof(SelectedModel));
 
             ConfigService.Instance.CurrentModel = match.Id;
+            ConfigService.Instance.CurrentModelSupportsVision = match.SupportsVision;
             StatusMessage = $"就緒  ·  {CurrentProvider} / {match.Id}";
         }
 

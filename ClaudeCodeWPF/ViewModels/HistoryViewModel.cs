@@ -67,8 +67,10 @@ namespace OpenClaudeCodeWPF.ViewModels
 
             if (string.IsNullOrWhiteSpace(query))
             {
-                // Point directly at the live ObservableCollection — changes auto-propagate
-                DisplayedSessions = _manager.Sessions;
+                // Always create a NEW collection so the ListBox re-renders all items
+                // (same-reference assignment won't trigger PropertyChanged,
+                //  and ConversationSession doesn't implement INotifyPropertyChanged).
+                DisplayedSessions = new ObservableCollection<ConversationSession>(_manager.Sessions);
             }
             else
             {

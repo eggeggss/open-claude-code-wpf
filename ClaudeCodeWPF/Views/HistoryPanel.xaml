@@ -12,7 +12,19 @@
 
         <!-- Header -->
         <Border Grid.Row="0" Background="{DynamicResource SecondaryBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="12,8">
-            <TextBlock Text="對話歷史" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="12" FontWeight="SemiBold"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="對話歷史" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" x:Name="CollapseBtn"
+                        Content="◀" Width="22" Height="22"
+                        Background="Transparent" BorderThickness="0"
+                        Foreground="{DynamicResource SecondaryTextBrush}"
+                        FontSize="11" Cursor="Hand" ToolTip="摺疊側欄"
+                        Click="CollapseBtn_Click"/>
+            </Grid>
         </Border>
 
         <!-- Search box -->
