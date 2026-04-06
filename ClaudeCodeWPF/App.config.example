@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  App.config.example — 設定範本
+  使用方式：複製此檔案並重新命名為 App.config，填入你的 API key 後再 Build。
+  App.config 本身已加入 .gitignore，不會被 commit 到版本控制。
+-->
+<configuration>
+  <startup>
+    <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.7.2" />
+  </startup>
+  <appSettings>
+
+    <!-- ===== 通用設定 ===== -->
+    <!-- 預設供應商：Anthropic | OpenAI | AzureOpenAI | Gemini | Ollama -->
+    <add key="DefaultProvider"   value="OpenAI" />
+    <!-- 預設模型 ID（切換供應商後會自動更新） -->
+    <add key="DefaultModel"      value="gpt-5" />
+    <add key="StreamingEnabled"  value="true" />
+    <!-- 介面語言（目前支援 zh-TW） -->
+    <add key="Language"          value="zh-TW" />
+    <add key="MaxTokens"         value="8192" />
+    <!-- 0.0 ~ 2.0，數值越高越隨機 -->
+    <add key="Temperature"       value="0.7" />
+    <add key="MaxRetries"        value="3" />
+    <!-- API 逾時秒數 -->
+    <add key="TimeoutSeconds"    value="600" />
+    <!-- 主題：Light | Dark | ClaudeCode -->
+    <add key="Theme"             value="ClaudeCode" />
+    <add key="ChatFontSize"      value="17" />
+    <add key="ChatFontFamily"    value="Comic Sans MS" />
+
+    <!-- ===== Anthropic Claude ===== -->
+    <!-- 取得 API key：https://console.anthropic.com/ -->
+    <add key="Anthropic.ApiKey"        value="sk-ant-api03-YOUR_KEY_HERE" />
+    <add key="Anthropic.BaseUrl"       value="https://api.anthropic.com" />
+    <add key="Anthropic.ApiVersion"    value="2023-06-01" />
+    <add key="Anthropic.DefaultModel"  value="claude-sonnet-4-20250514" />
+
+    <!-- ===== OpenAI ===== -->
+    <!-- 取得 API key：https://platform.openai.com/api-keys -->
+    <add key="OpenAI.ApiKey"       value="sk-YOUR_KEY_HERE" />
+    <add key="OpenAI.BaseUrl"      value="https://api.openai.com/v1" />
+    <add key="OpenAI.DefaultModel" value="gpt-5" />
+
+    <!-- ===== Azure OpenAI ===== -->
+    <!-- 單節點設定（多節點請在 App 設定頁面使用 pipe 格式輸入） -->
+    <!-- 格式：名稱|Endpoint|ApiKey|DeploymentName|ApiVersion -->
+    <add key="AzureOpenAI.ApiKey"          value="" />
+    <add key="AzureOpenAI.Endpoint"        value="https://YOUR_RESOURCE.openai.azure.com" />
+    <add key="AzureOpenAI.DeploymentName"  value="gpt-4o" />
+    <add key="AzureOpenAI.ApiVersion"      value="2024-02-01" />
+
+    <!-- ===== Google Gemini ===== -->
+    <!-- 取得 API key：https://aistudio.google.com/app/apikey -->
+    <add key="Gemini.ApiKey"       value="AIzaSy-YOUR_KEY_HERE" />
+    <add key="Gemini.BaseUrl"      value="https://generativelanguage.googleapis.com" />
+    <add key="Gemini.DefaultModel" value="gemini-2.5-pro-preview-05-06" />
+
+    <!-- ===== Ollama（本地模型，無需 API key） ===== -->
+    <!-- 啟動方式：ollama serve  |  安裝：https://ollama.com -->
+    <add key="Ollama.BaseUrl"         value="http://localhost:11434" />
+    <add key="Ollama.DefaultModel"    value="llama3" />
+    <!-- true = 使用 OpenAI 相容 API（建議保持 true） -->
+    <add key="Ollama.UseOpenAICompat" value="true" />
+
+    <!-- ===== MCP 設定 ===== -->
+    <add key="MCP.ConfigPath"    value="mcp-servers.json" />
+
+    <!-- ===== Skills 設定 ===== -->
+    <add key="Skills.Directory"  value="skills/" />
+
+  </appSettings>
+</configuration>

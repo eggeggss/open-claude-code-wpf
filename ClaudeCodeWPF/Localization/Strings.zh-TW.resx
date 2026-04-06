@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve">
+    <value>Claude Code WPF</value>
+  </data>
+  <data name="NewChat" xml:space="preserve">
+    <value>新對話</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="Send" xml:space="preserve">
+    <value>傳送</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="History" xml:space="preserve">
+    <value>對話歷史</value>
+  </data>
+  <data name="ToolOutput" xml:space="preserve">
+    <value>工具輸出</value>
+  </data>
+  <data name="FilePreview" xml:space="preserve">
+    <value>檔案預覽</value>
+  </data>
+  <data name="Ready" xml:space="preserve">
+    <value>就緒</value>
+  </data>
+  <data name="Thinking" xml:space="preserve">
+    <value>AI 正在思考...</value>
+  </data>
+  <data name="Streaming" xml:space="preserve">
+    <value>串流</value>
+  </data>
+  <data name="InputPlaceholder" xml:space="preserve">
+    <value>輸入訊息... (Enter 傳送, Shift+Enter 換行)</value>
+  </data>
+</root>

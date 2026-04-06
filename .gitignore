@@ -1,0 +1,77 @@
+# ── Build output ──────────────────────────────────────────────
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ── Visual Studio ──────────────────────────────────────────────
+.vs/
+*.rsuser
+*.vsp
+*.vspx
+.vscode/
+
+# ── NuGet ──────────────────────────────────────────────────────
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+!**/packages/build/
+
+# ── .NET / MSBuild ─────────────────────────────────────────────
+*.cache
+*.pidb
+*.svd
+*.pdb
+*.mdb
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.tlog
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# App secrets / config overrides ────────────────────────────
+*.local.config
+appsettings.local.json
+usersettings.json
+# App.config contains API keys — use App.config.example as template
+ClaudeCodeWPF/App.config
+
+# ── Project-specific ignored folders ──────────────────────────
+# Design/requirement assets — not for source control
+req/
+
+# Internal specs / planning documents
+spec/
+
+# ── OS ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini

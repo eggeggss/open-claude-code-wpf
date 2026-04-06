@@ -1,0 +1,134 @@
+<UserControl x:Class="OpenClaudeCodeWPF.Views.ChatPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:OpenClaudeCodeWPF.ViewModels"
+             Background="{DynamicResource PrimaryBgBrush}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Chat Messages ScrollViewer -->
+        <ScrollViewer x:Name="MessagesScroll" Grid.Row="0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Background="{DynamicResource PrimaryBgBrush}">
+            <Grid>
+                <!-- Empty state: shown when no messages exist -->
+                <StackPanel x:Name="EmptyState"
+                            VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Margin="0,60,0,0" Opacity="1.0">
+                    <TextBlock Text="OPEN CLAUDE CODE WPF"
+                               FontSize="52" FontWeight="Bold"
+                               FontFamily="Consolas, Cascadia Code, Courier New"
+                               Foreground="#FF6000"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="▸ 輸入訊息開始對話"
+                               FontSize="14"
+                               FontFamily="Consolas, Cascadia Code, Courier New"
+                               Foreground="#FF6000"
+                               HorizontalAlignment="Center"
+                               Margin="0,10,0,0"/>
+                </StackPanel>
+
+                <StackPanel x:Name="MessagesPanel" Margin="16,16,16,8">
+                    <!-- Messages are added dynamically -->
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Input Area -->
+        <Border Grid.Row="1" Background="{DynamicResource SecondaryBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="12,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- Thinking indicator -->
+                    <RowDefinition Height="Auto"/>  <!-- Slash command hint -->
+                    <RowDefinition Height="Auto"/>  <!-- Input + send -->
+                </Grid.RowDefinitions>
+
+                <!-- Thinking indicator: shown while IsSending -->
+                <TextBlock x:Name="ThinkingIndicator" Grid.Row="0"
+                           Text="◈ AI 正在思考..." Foreground="{DynamicResource AccentBrush}" FontSize="12"
+                           Visibility="{Binding IsSending, Converter={StaticResource BoolToVis}}"
+                           Margin="0,0,0,6"/>
+
+                <!-- Slash command hint bar -->
+                <TextBlock x:Name="SlashHint" Grid.Row="1"
+                           FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}"
+                           Visibility="{Binding IsSlashHintVisible, Converter={StaticResource BoolToVis}}"
+                           Margin="2,0,0,4" TextWrapping="Wrap">
+                    <Run Foreground="{DynamicResource AccentBrush}">/help</Run><Run> 說明 · </Run>
+                    <Run Foreground="{DynamicResource AccentBrush}">/clear</Run><Run> 清除 · </Run>
+                    <Run Foreground="{DynamicResource AccentBrush}">/compact</Run><Run> 壓縮 · </Run>
+                    <Run Foreground="{DynamicResource AccentBrush}">/context</Run><Run> 上下文 · </Run>
+                    <Run Foreground="{DynamicResource AccentBrush}">/export</Run><Run> 匯出 · </Run>
+                    <Run Foreground="{DynamicResource AccentBrush}">/cost</Run><Run> 費用 · </Run>
+                    <Run Foreground="{DynamicResource AccentBrush}">/rename</Run><Run> 重命名</Run>
+                </TextBlock>
+
+                <!-- Input row -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Background="{DynamicResource InputBoxBrush}" CornerRadius="6"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                        <TextBox x:Name="InputBox"
+                                 Background="Transparent" Foreground="{DynamicResource PrimaryTextBrush}"
+                                 BorderThickness="0" Padding="10,8"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap" MaxHeight="200"
+                                 VerticalScrollBarVisibility="Auto"
+                                 CaretBrush="{DynamicResource PrimaryTextBrush}"
+                                 Text="{Binding InputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PreviewKeyDown="InputBox_KeyDown">
+                            <TextBox.Resources>
+                                <Style TargetType="TextBox">
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="">
+                                            <Setter Property="Background">
+                                                <Setter.Value>
+                                                    <VisualBrush AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                        <VisualBrush.Visual>
+                                                            <TextBlock Foreground="#666666"
+                                                                       Text="輸入訊息... (Enter 傳送, Shift+Enter 換行)"/>
+                                                        </VisualBrush.Visual>
+                                                    </VisualBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Resources>
+                        </TextBox>
+                    </Border>
+
+                    <!-- Cancel button (shown during generation) -->
+                    <Button x:Name="CancelButton" Grid.Column="1"
+                            Content="⬛" Width="36" Height="36" Margin="8,0,0,0"
+                            Background="#8B0000" Foreground="White" BorderThickness="0"
+                            FontSize="14" ToolTip="取消"
+                            Visibility="{Binding IsSending, Converter={StaticResource BoolToVis}}"
+                            Command="{Binding CancelCommand}"/>
+
+                    <!-- Send button -->
+                    <Button x:Name="SendButton" Grid.Column="2"
+                            Content="⬆" Width="36" Height="36" Margin="8,0,0,0"
+                            Background="{DynamicResource SendButtonBrush}" Foreground="White" BorderThickness="0"
+                            FontSize="16" ToolTip="傳送 (Enter)"
+                            IsEnabled="{Binding CanSend}"
+                            Command="{Binding SendCommand}"/>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

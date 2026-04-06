@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve">
+    <value>Claude Code WPF</value>
+  </data>
+  <data name="NewChat" xml:space="preserve">
+    <value>New Chat</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Send" xml:space="preserve">
+    <value>Send</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="History" xml:space="preserve">
+    <value>Chat History</value>
+  </data>
+  <data name="ToolOutput" xml:space="preserve">
+    <value>Tool Output</value>
+  </data>
+  <data name="FilePreview" xml:space="preserve">
+    <value>File Preview</value>
+  </data>
+  <data name="Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Thinking" xml:space="preserve">
+    <value>AI is thinking...</value>
+  </data>
+  <data name="Streaming" xml:space="preserve">
+    <value>Streaming</value>
+  </data>
+  <data name="InputPlaceholder" xml:space="preserve">
+    <value>Type a message... (Enter to send, Shift+Enter for newline)</value>
+  </data>
+</root>

@@ -1,0 +1,223 @@
+<Window x:Class="OpenClaudeCodeWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:OpenClaudeCodeWPF.Views"
+        Title="Open Claude Code WPF" Height="800" Width="1280"
+        Background="{DynamicResource PrimaryBgBrush}" WindowState="Maximized"
+        Loaded="Window_Loaded" Closing="Window_Closing"
+        KeyDown="Window_KeyDown">
+
+    <Window.Resources>
+        <!-- Grid splitter style -->
+        <Style x:Key="PanelSplitter" TargetType="GridSplitter">
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="Width" Value="4"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+        </Style>
+        <!-- Converts bool → Visibility for capability badges -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>     <!-- Title bar / toolbar -->
+            <RowDefinition Height="*"/>        <!-- Main content -->
+            <RowDefinition Height="Auto"/>     <!-- Status bar -->
+        </Grid.RowDefinitions>
+
+        <!-- Title Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource TitleBarBrush}" Height="36">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- App icon + title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                    <TextBlock Text="◆" Foreground="{DynamicResource AccentBrush}" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Open Claude Code WPF" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Model picker (center) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ComboBox x:Name="ProviderComboBox" Width="120" Margin="0,0,8,0"
+                              Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                              SelectionChanged="ProviderComboBox_SelectionChanged"/>
+                    <ComboBox x:Name="ModelComboBox" Width="260"
+                              Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                              SelectionChanged="ModelComboBox_SelectionChanged">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                            ToolTip="{Binding CapabilityTip}">
+                                    <!-- Model display name -->
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
+                                               VerticalAlignment="Center" Margin="0,0,5,0" FontSize="12"/>
+                                    <!-- Tools badge: orange pill -->
+                                    <Border Background="#D4711A" CornerRadius="3" Padding="3,1" Margin="1,0"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding SupportsTools, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="工" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                                    </Border>
+                                    <!-- Vision badge: blue pill -->
+                                    <Border Background="#1565C0" CornerRadius="3" Padding="3,1" Margin="1,0"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding SupportsVision, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="視" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                                    </Border>
+                                    <!-- Thinking badge: green pill -->
+                                    <Border Background="#2E7D32" CornerRadius="3" Padding="3,1" Margin="1,0"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding SupportsThinking, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="T" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <!-- Badge legend: hover to learn what 工/視/T mean -->
+                    <Border Background="Transparent" BorderThickness="0"
+                            VerticalAlignment="Center" Margin="4,0,0,0" Cursor="Help"
+                            ToolTipService.InitialShowDelay="200">
+                        <Border.ToolTip>
+                            <ToolTip>
+                                <StackPanel Margin="6">
+                                    <TextBlock Text="能力標示說明" FontWeight="Bold" FontSize="12" Margin="0,0,0,8"/>
+                                    <!-- 工 -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <Border Background="#D4711A" CornerRadius="3" Padding="4,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                            <TextBlock Text="工" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                                        </Border>
+                                        <TextBlock Text="支援工具呼叫 (Function Calling)" VerticalAlignment="Center" FontSize="12"/>
+                                    </StackPanel>
+                                    <!-- 視 -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <Border Background="#1565C0" CornerRadius="3" Padding="4,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                            <TextBlock Text="視" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                                        </Border>
+                                        <TextBlock Text="支援多模態/視覺輸入 (Vision)" VerticalAlignment="Center" FontSize="12"/>
+                                    </StackPanel>
+                                    <!-- T -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Background="#2E7D32" CornerRadius="3" Padding="4,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                            <TextBlock Text="T" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                                        </Border>
+                                        <TextBlock Text="支援延伸思考 (Extended Thinking)" VerticalAlignment="Center" FontSize="12"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ToolTip>
+                        </Border.ToolTip>
+                        <!-- visible indicator -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Background="#D4711A" CornerRadius="3" Padding="3,1" Margin="1,0" VerticalAlignment="Center">
+                                <TextBlock Text="工" FontSize="8" Foreground="White" FontWeight="Bold"/>
+                            </Border>
+                            <Border Background="#1565C0" CornerRadius="3" Padding="3,1" Margin="1,0" VerticalAlignment="Center">
+                                <TextBlock Text="視" FontSize="8" Foreground="White" FontWeight="Bold"/>
+                            </Border>
+                            <Border Background="#2E7D32" CornerRadius="3" Padding="3,1" Margin="1,0" VerticalAlignment="Center">
+                                <TextBlock Text="T" FontSize="8" Foreground="White" FontWeight="Bold"/>
+                            </Border>
+                            <TextBlock Text=" ?" FontSize="9" Foreground="#888888" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Toolbar buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <ToggleButton x:Name="StreamToggle" Content="串流" Width="50" Height="24" Margin="0,0,6,0"
+                                  Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                  IsChecked="{Binding IsStreamingEnabled}"
+                                  Checked="StreamToggle_Changed" Unchecked="StreamToggle_Changed"/>
+                    <Button Content="設定" Width="50" Height="24" Margin="0,0,6,0"
+                            Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                            Click="SettingsButton_Click"/>
+                    <Button Content="新對話" Width="60" Height="24"
+                            Background="{DynamicResource SendButtonBrush}" Foreground="White" BorderThickness="0"
+                            Click="NewChatButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content (3 panels) -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240" MinWidth="160" MaxWidth="400"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*" MinWidth="300"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="320" MinWidth="200" MaxWidth="600" x:Name="RightPanelColumn"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- History Panel -->
+            <views:HistoryPanel x:Name="HistoryPanel" Grid.Column="0"/>
+
+            <GridSplitter Grid.Column="1" Style="{StaticResource PanelSplitter}"/>
+
+            <!-- Chat Panel -->
+            <views:ChatPanel x:Name="ChatPanel" Grid.Column="2"/>
+
+            <GridSplitter Grid.Column="3" Style="{StaticResource PanelSplitter}"/>
+
+            <!-- Right Panel as TabControl -->
+            <TabControl Grid.Column="4" Background="{DynamicResource PrimaryBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1,0,0,0">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem">
+                        <Setter Property="Background" Value="{DynamicResource SecondaryBgBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Padding" Value="10,4"/>
+                        <Setter Property="FontSize" Value="11"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                                <Setter Property="Background" Value="{DynamicResource PrimaryBgBrush}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TabControl.Resources>
+
+                <!-- Tab 1: Tool Output -->
+                <TabItem Header="工具輸出">
+                    <views:ToolOutputPanel x:Name="ToolOutputPanel"/>
+                </TabItem>
+
+                <!-- Tab 2: Tools & Skills list -->
+                <TabItem Header="🧩 工具清單">
+                    <views:ToolsPanel x:Name="ToolsPanel"/>
+                </TabItem>
+
+                <!-- Tab 3: File Preview -->
+                <TabItem Header="檔案預覽">
+                    <views:FilePreviewPanel x:Name="FilePreviewPanel"/>
+                </TabItem>
+            </TabControl>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="{DynamicResource StatusBarBrush}" Height="22">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText" Grid.Column="0"
+                           Text="就緒" Foreground="White" FontSize="11"
+                           VerticalAlignment="Center" Margin="8,0"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="ContextText" FontSize="11"
+                               VerticalAlignment="Center" Margin="0,0,10,0"
+                               Visibility="Collapsed"/>
+                    <TextBlock x:Name="TokenText"
+                               Foreground="White" FontSize="11"
+                               VerticalAlignment="Center" Margin="8,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
