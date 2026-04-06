@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using OpenClaudeCodeWPF.Models;
 
 namespace OpenClaudeCodeWPF.ViewModels
 {
@@ -17,6 +21,12 @@ namespace OpenClaudeCodeWPF.ViewModels
             }
         }
 
+        // ── Attached files ────────────────────────────────────────────────
+        public ObservableCollection<AttachedFileInfo> AttachedFiles { get; }
+            = new ObservableCollection<AttachedFileInfo>();
+
+        public bool HasAttachedFiles => AttachedFiles.Count > 0;
+
         // ── Sending state ─────────────────────────────────────────────────
         private bool _isSending;
         public bool IsSending
@@ -30,7 +40,7 @@ namespace OpenClaudeCodeWPF.ViewModels
         }
 
         // ── Computed ──────────────────────────────────────────────────────
-        public bool CanSend => !string.IsNullOrWhiteSpace(InputText) && !IsSending;
+        public bool CanSend => (!string.IsNullOrWhiteSpace(InputText) || HasAttachedFiles) && !IsSending;
         public bool IsSlashHintVisible => InputText?.StartsWith("/") ?? false;
 
         // ── Commands ──────────────────────────────────────────────────────
@@ -38,8 +48,8 @@ namespace OpenClaudeCodeWPF.ViewModels
         public RelayCommand CancelCommand { get; }
 
         // ── Events (consumed by ChatPanel code-behind) ────────────────────
-        /// <summary>Fired with the trimmed text when user sends a normal message.</summary>
-        public event Action<string> SendRequested;
+        /// <summary>Fired with trimmed text + attached files when user sends a message.</summary>
+        public event Action<string, IReadOnlyList<AttachedFileInfo>> SendRequested;
 
         /// <summary>Fired with the slash command string (e.g. "/clear").</summary>
         public event Action<string> SlashCommandRequested;
@@ -52,13 +62,43 @@ namespace OpenClaudeCodeWPF.ViewModels
         {
             SendCommand   = new RelayCommand(ExecuteSend,   () => CanSend);
             CancelCommand = new RelayCommand(ExecuteCancel, () => IsSending);
+
+            AttachedFiles.CollectionChanged += (s, e) =>
+            {
+                OnPropertyChanged(nameof(HasAttachedFiles));
+                OnPropertyChanged(nameof(CanSend));
+            };
         }
 
         // ── Helpers ───────────────────────────────────────────────────────
+        public void AddFiles(IEnumerable<string> paths)
+        {
+            foreach (var path in paths)
+            {
+                if (!File.Exists(path)) continue;
+                // Avoid duplicates
+                foreach (var existing in AttachedFiles)
+                    if (existing.FilePath == path) goto next;
+
+                AttachedFiles.Add(new AttachedFileInfo
+                {
+                    FilePath = path,
+                    FileSize = new FileInfo(path).Length
+                });
+                next:;
+            }
+        }
+
+        public void RemoveFile(AttachedFileInfo file)
+        {
+            AttachedFiles.Remove(file);
+        }
+
         private void ExecuteSend()
         {
-            var text = InputText?.Trim();
-            if (string.IsNullOrEmpty(text)) return;
+            var text = InputText?.Trim() ?? "";
+
+            if (string.IsNullOrEmpty(text) && AttachedFiles.Count == 0) return;
 
             InputText = "";
 
@@ -68,8 +108,11 @@ namespace OpenClaudeCodeWPF.ViewModels
                 return;
             }
 
+            var files = new List<AttachedFileInfo>(AttachedFiles);
+            AttachedFiles.Clear();
+
             IsSending = true;
-            SendRequested?.Invoke(text);
+            SendRequested?.Invoke(text, files);
         }
 
         private void ExecuteCancel()
@@ -87,3 +130,4 @@ namespace OpenClaudeCodeWPF.ViewModels
         }
     }
 }
+

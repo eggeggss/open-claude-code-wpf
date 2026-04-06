@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <!--
+    Open Claude Code WPF Installer
+    Built with WiX Toolset v3 (https://wixtoolset.org/)
+    
+    Prerequisite: .NET Framework 4.7.2 (usually pre-installed on Windows 10/11)
+  -->
+
+  <Product Id="*"
+           Name="Open Claude Code WPF"
+           Language="1028"
+           Version="0.1.0.0"
+           Manufacturer="Open Claude Code"
+           UpgradeCode="{E5F6A7B8-C9D0-1234-EF01-23456789ABCD}">
+
+    <Package InstallerVersion="405"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="Open Claude Code WPF - AI Chat Client"
+             Manufacturer="Open Claude Code"
+             Languages="1028" />
+
+    <!-- Major upgrade: removes older version before installing new one -->
+    <MajorUpgrade Schedule="afterInstallInitialize"
+                  DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+    <!-- Embed all files in the MSI cabinet -->
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- UI: InstallDir lets user choose install path -->
+    <UIRef Id="WixUI_InstallDir" />
+    <UIRef Id="WixUI_ErrorProgressText" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+
+    <!-- License agreement text -->
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+    <!-- Features -->
+    <Feature Id="ProductFeature" Title="Open Claude Code WPF" Level="1"
+             Description="Install Open Claude Code WPF" AllowAdvertise="no" Display="expand">
+      <ComponentGroupRef Id="AppComponents" />
+      <ComponentRef Id="ShortcutComponent" />
+    </Feature>
+
+  </Product>
+
+  <!-- ═══════════════════════════════════ DIRECTORY STRUCTURE ═══════════════════════════════════ -->
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+
+      <!-- Program Files\Open Claude Code WPF -->
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="ManufacturerFolder" Name="Open Claude Code">
+          <Directory Id="INSTALLDIR" Name="Open Claude Code WPF" />
+        </Directory>
+      </Directory>
+
+      <!-- Start Menu -->
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Open Claude Code WPF" />
+      </Directory>
+
+      <!-- Desktop -->
+      <Directory Id="DesktopFolder" Name="Desktop" />
+
+    </Directory>
+  </Fragment>
+
+  <!-- ═══════════════════════════════════ COMPONENTS ═══════════════════════════════════════════ -->
+
+  <Fragment>
+    <ComponentGroup Id="AppComponents" Directory="INSTALLDIR">
+
+      <!-- Main executable -->
+      <Component Id="MainExeComponent" Guid="{F1A2B3C4-D5E6-7890-ABCD-EF0123456789}">
+        <File Id="MainExe"
+              Source="$(var.OpenClaudeCodeWPF.TargetPath)"
+              Name="OpenClaudeCodeWPF.exe"
+              KeyPath="yes" />
+      </Component>
+
+      <!-- App.config -->
+      <Component Id="AppConfigComponent" Guid="{A2B3C4D5-E6F7-8901-BCDE-F01234567890}">
+        <File Id="AppConfigFile"
+              Source="$(var.OpenClaudeCodeWPF.TargetPath).config"
+              Name="OpenClaudeCodeWPF.exe.config"
+              KeyPath="yes" />
+      </Component>
+
+      <!-- Newtonsoft.Json -->
+      <Component Id="NewtonsoftJsonComponent" Guid="{B3C4D5E6-F7A8-9012-CDEF-012345678901}">
+        <File Id="NewtonsoftJsonDll"
+              Source="$(var.OpenClaudeCodeWPF.TargetDir)Newtonsoft.Json.dll"
+              Name="Newtonsoft.Json.dll"
+              KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+
+    <!-- Shortcuts component (stored in registry to satisfy ICE requirements) -->
+    <Component Id="ShortcutComponent" Directory="ApplicationProgramsFolder"
+               Guid="{C4D5E6F7-A8B9-0123-DEF0-123456789012}">
+
+      <!-- Start Menu shortcut -->
+      <Shortcut Id="StartMenuShortcut"
+                Name="Open Claude Code WPF"
+                Description="AI Chat Client with Claude / Gemini / GPT / Ollama support"
+                Target="[INSTALLDIR]OpenClaudeCodeWPF.exe"
+                WorkingDirectory="INSTALLDIR"
+                Icon="AppIcon" />
+
+      <!-- Desktop shortcut -->
+      <Shortcut Id="DesktopShortcut"
+                Directory="DesktopFolder"
+                Name="Open Claude Code WPF"
+                Description="AI Chat Client with Claude / Gemini / GPT / Ollama support"
+                Target="[INSTALLDIR]OpenClaudeCodeWPF.exe"
+                WorkingDirectory="INSTALLDIR"
+                Icon="AppIcon" />
+
+      <!-- Uninstall shortcut in Start Menu -->
+      <Shortcut Id="UninstallShortcut"
+                Name="Uninstall Open Claude Code WPF"
+                Target="[System64Folder]msiexec.exe"
+                Arguments="/x [ProductCode]" />
+
+      <RemoveFolder Id="RemoveApplicationProgramsFolder"
+                    Directory="ApplicationProgramsFolder"
+                    On="uninstall" />
+
+      <!-- Registry key path (WiX requires a KeyPath per component) -->
+      <RegistryValue Root="HKCU"
+                     Key="Software\OpenClaudeCodeWPF"
+                     Name="Installed"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+    </Component>
+
+  </Fragment>
+
+  <!-- ═══════════════════════════════════ ICON ════════════════════════════════════════════════ -->
+
+  <Fragment>
+    <Icon Id="AppIcon" SourceFile="$(var.OpenClaudeCodeWPF.ProjectDir)Resources\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/your-repo/claude-code-wpf" />
+  </Fragment>
+
+</Wix>

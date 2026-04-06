@@ -104,6 +104,15 @@ namespace OpenClaudeCodeWPF.ViewModels
             }
         }
 
+        public string AppVersion
+        {
+            get
+            {
+                var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                return $"v{v.Major}.{v.Minor}.{v.Build}";
+            }
+        }
+
         // ── Constructor ─────────────────────────────────────────────────
 
         public MainWindowViewModel()

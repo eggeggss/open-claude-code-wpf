@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using OpenClaudeCodeWPF.Models;
 using OpenClaudeCodeWPF.Services;
+using OpenClaudeCodeWPF.Services.DocumentProcessing;
 using OpenClaudeCodeWPF.ViewModels;
 
 namespace OpenClaudeCodeWPF
@@ -127,9 +131,11 @@ namespace OpenClaudeCodeWPF
             }
         }
 
-        private async void OnSendMessage(string message)
+        private async void OnSendMessage(string message, IReadOnlyList<AttachedFileInfo> files)
         {
-            if (string.IsNullOrWhiteSpace(message)) return;
+            // Build final message: original text + extracted file contents
+            var finalMessage = await BuildMessageWithFiles(message, files);
+            if (string.IsNullOrWhiteSpace(finalMessage)) return;
 
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
@@ -139,8 +145,9 @@ namespace OpenClaudeCodeWPF
 
             var session = ConversationManager.Instance.GetOrCreateActiveSession();
 
-            // Show user message immediately in UI (before typing bubble)
-            ChatPanel.AddUserMessage(message);
+            // Show user message in UI: original text + file names (not full content)
+            var displayMsg = BuildDisplayMessage(message, files);
+            ChatPanel.AddUserMessage(displayMsg);
             // Show animated bubble right after user message while waiting for HTTP
             ChatPanel.ShowWaitingIndicator();
 
@@ -148,7 +155,7 @@ namespace OpenClaudeCodeWPF
             {
                 // Run on background thread so streaming renders each chunk
                 // instead of batching all updates at the end on the UI thread
-                await Task.Run(() => _chatService.SendMessageAsync(session, message, _cts.Token));
+                await Task.Run(() => _chatService.SendMessageAsync(session, finalMessage, _cts.Token));
             }
             catch (OperationCanceledException)
             {
@@ -168,6 +175,46 @@ namespace OpenClaudeCodeWPF
         {
             _cts?.Cancel();
             _vm.StatusMessage = "取消中...";
+        }
+
+        private static string BuildDisplayMessage(string message, IReadOnlyList<AttachedFileInfo> files)
+        {
+            if (files == null || files.Count == 0)
+                return message;
+            var names = string.Join(", ", files.Select(f => f.FileName));
+            return string.IsNullOrWhiteSpace(message)
+                ? $"📎 {names}"
+                : $"{message}\n📎 {names}";
+        }
+
+        private async Task<string> BuildMessageWithFiles(string message, IReadOnlyList<AttachedFileInfo> files)
+        {
+            if (files == null || files.Count == 0)
+                return string.IsNullOrWhiteSpace(message) ? null : message;
+
+            var sb = new StringBuilder();
+            if (!string.IsNullOrWhiteSpace(message))
+                sb.AppendLine(message).AppendLine();
+
+            foreach (var file in files)
+            {
+                sb.AppendLine($"--- 附件: {file.FileName} ({file.DisplaySize}) ---");
+                try
+                {
+                    var content = await Task.Run(() =>
+                        DocumentExtractor.ExtractText(file.FilePath));
+                    sb.AppendLine(string.IsNullOrWhiteSpace(content)
+                        ? "[無法擷取文字內容]"
+                        : content);
+                }
+                catch (Exception ex)
+                {
+                    sb.AppendLine($"[讀取失敗: {ex.Message}]");
+                }
+                sb.AppendLine();
+            }
+
+            return sb.ToString().TrimEnd();
         }
 
         private void HandleSlashCommand(string input)
@@ -362,7 +409,7 @@ namespace OpenClaudeCodeWPF
 
             session.UpdatedAt = DateTime.UtcNow;
             ConversationManager.Instance.SaveSession(session);
-            Dispatcher.InvokeAsync(() => HistoryPanel.Refresh());
+            _ = Dispatcher.InvokeAsync(() => HistoryPanel.Refresh());
         }
     }
 }

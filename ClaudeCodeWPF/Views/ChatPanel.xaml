@@ -49,6 +49,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>  <!-- Thinking indicator -->
                     <RowDefinition Height="Auto"/>  <!-- Slash command hint -->
+                    <RowDefinition Height="Auto"/>  <!-- Attached files chips -->
                     <RowDefinition Height="Auto"/>  <!-- Input + send -->
                 </Grid.RowDefinitions>
 
@@ -72,15 +73,64 @@
                     <Run Foreground="{DynamicResource AccentBrush}">/rename</Run><Run> 重命名</Run>
                 </TextBlock>
 
+                <!-- Attached files chips (visible when files are selected) -->
+                <ItemsControl Grid.Row="2"
+                              ItemsSource="{Binding AttachedFiles}"
+                              Visibility="{Binding HasAttachedFiles, Converter={StaticResource BoolToVis}}"
+                              Margin="0,0,0,6">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{DynamicResource InputBoxBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                    CornerRadius="4" Margin="0,0,6,4" Padding="6,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding FileIcon}" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <TextBlock Text="{Binding FileName}"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
+                                               FontSize="11" VerticalAlignment="Center"
+                                               MaxWidth="140" TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding FilePath}"/>
+                                    <TextBlock Text="{Binding DisplaySize}"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               FontSize="10" VerticalAlignment="Center" Margin="4,0"/>
+                                    <Button Content="✕"
+                                            Tag="{Binding}"
+                                            Click="RemoveFile_Click"
+                                            Background="Transparent"
+                                            Foreground="{DynamicResource SecondaryTextBrush}"
+                                            BorderThickness="0"
+                                            Padding="2,0" FontSize="10"
+                                            Cursor="Hand" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
                 <!-- Input row -->
-                <Grid Grid.Row="2">
+                <Grid Grid.Row="3">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>  <!-- Attach button -->
+                        <ColumnDefinition Width="*"/>     <!-- Input box -->
+                        <ColumnDefinition Width="Auto"/>  <!-- Cancel button -->
+                        <ColumnDefinition Width="Auto"/>  <!-- Send button -->
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0" Background="{DynamicResource InputBoxBrush}" CornerRadius="6"
+                    <!-- Attach file button -->
+                    <Button x:Name="AttachButton" Grid.Column="0"
+                            Content="📎" Width="36" Height="36" Margin="0,0,6,0"
+                            Background="{DynamicResource InputBoxBrush}"
+                            Foreground="{DynamicResource PrimaryTextBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                            FontSize="16" ToolTip="附加檔案 (支援 PDF、Word、Excel、PPT、圖片、文字)"
+                            Click="AttachFiles_Click"/>
+
+                    <Border Grid.Column="1" Background="{DynamicResource InputBoxBrush}" CornerRadius="6"
                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                         <TextBox x:Name="InputBox"
                                  Background="Transparent" Foreground="{DynamicResource PrimaryTextBrush}"
@@ -113,7 +163,7 @@
                     </Border>
 
                     <!-- Cancel button (shown during generation) -->
-                    <Button x:Name="CancelButton" Grid.Column="1"
+                    <Button x:Name="CancelButton" Grid.Column="2"
                             Content="⬛" Width="36" Height="36" Margin="8,0,0,0"
                             Background="#8B0000" Foreground="White" BorderThickness="0"
                             FontSize="14" ToolTip="取消"
@@ -121,7 +171,7 @@
                             Command="{Binding CancelCommand}"/>
 
                     <!-- Send button -->
-                    <Button x:Name="SendButton" Grid.Column="2"
+                    <Button x:Name="SendButton" Grid.Column="3"
                             Content="⬆" Width="36" Height="36" Margin="8,0,0,0"
                             Background="{DynamicResource SendButtonBrush}" Foreground="White" BorderThickness="0"
                             FontSize="16" ToolTip="傳送 (Enter)"

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -7,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using OpenClaudeCodeWPF.Models;
 using OpenClaudeCodeWPF.Services;
 using OpenClaudeCodeWPF.Utils;
@@ -17,7 +19,7 @@ namespace OpenClaudeCodeWPF.Views
     public partial class ChatPanel : UserControl
     {
         // ── Events exposed to MainWindow ──────────────────────────────────
-        public event Action<string> OnSendMessage;
+        public event Action<string, IReadOnlyList<AttachedFileInfo>> OnSendMessage;
         public event Action OnCancelRequested;
         public event Action<string> OnSlashCommand;
 
@@ -63,8 +65,7 @@ namespace OpenClaudeCodeWPF.Views
             DataContext = _vm;
 
             // Bridge VM events → ChatPanel public events (for MainWindow)
-            // Note: MainWindow.OnSendMessage handles AddUserMessage + ShowWaitingIndicator itself
-            _vm.SendRequested         += text => OnSendMessage?.Invoke(text);
+            _vm.SendRequested         += (text, files) => OnSendMessage?.Invoke(text, files);
             _vm.SlashCommandRequested += text => { AddUserMessage(text); OnSlashCommand?.Invoke(text); };
             _vm.CancelRequested       += ()   => OnCancelRequested?.Invoke();
 
@@ -633,6 +634,34 @@ namespace OpenClaudeCodeWPF.Views
                 if (_vm.SendCommand.CanExecute(null))
                     _vm.SendCommand.Execute(null);
             }
+        }
+
+        // ── File attachment handlers ───────────────────────────────────────
+
+        private void AttachFiles_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "選擇要附加的檔案",
+                Multiselect = true,
+                Filter = "支援的檔案|*.pdf;*.doc;*.docx;*.xls;*.xlsx;*.ppt;*.pptx;*.txt;*.md;*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.csv"
+                       + "|PDF 文件|*.pdf"
+                       + "|Word 文件|*.doc;*.docx"
+                       + "|Excel 試算表|*.xls;*.xlsx"
+                       + "|PowerPoint 簡報|*.ppt;*.pptx"
+                       + "|圖片|*.png;*.jpg;*.jpeg;*.gif;*.bmp"
+                       + "|文字檔|*.txt;*.md;*.csv"
+                       + "|所有檔案|*.*"
+            };
+
+            if (dlg.ShowDialog() == true)
+                _vm.AddFiles(dlg.FileNames);
+        }
+
+        private void RemoveFile_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is AttachedFileInfo file)
+                _vm.RemoveFile(file);
         }
 
         // ── Typing bubble (animated dots while waiting for first response token) ──
