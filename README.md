@@ -161,6 +161,29 @@ Japan East|https://myhub-japan.openai.azure.com|sk-yyy|gpt-4o-mini|2024-02-01
 
 ---
 
+## 系統架構（MVVM）
+
+本專案採用 **MVVM（Model-View-ViewModel）** 架構，將 UI 邏輯與商業邏輯完全分離。
+
+![MVVM 架構圖](doc/mvvm-architecture.png)
+
+| 層級 | 說明 |
+|---|---|
+| **Views** | XAML 視圖，僅負責畫面呈現；透過 DataBinding 與 ViewModel 溝通 |
+| **ViewModels** | 繼承 `ViewModelBase`（`INotifyPropertyChanged`），持有 UI 狀態與 `ICommand`；不直接操作 View |
+| **Services** | 無狀態商業邏輯（API 呼叫、設定讀寫、主題管理等），由 ViewModel 呼叫 |
+
+### ViewModel 對應表
+
+| ViewModel | 對應 View | 主要職責 |
+|---|---|---|
+| `MainWindowViewModel` | `MainWindow.xaml` | 狀態列、供應商 / 模型選擇、串流開關、Context 指示器 |
+| `ChatViewModel` | `ChatPanel.xaml` | 輸入文字、傳送 / 取消命令、Slash 提示顯示 |
+| `SettingsViewModel` | `SettingsPanel.xaml` | 所有設定項目（API Key、字型、主題、Temperature）的讀取與儲存 |
+| `HistoryViewModel` | `HistoryPanel.xaml` | 對話歷史過濾搜尋、選取後通知 MainWindow 切換 Session |
+
+---
+
 ## 專案結構
 
 ```
@@ -173,6 +196,13 @@ OpenClaudeCodeWPF/
 │   ├── ThemeService.cs  # 主題管理
 │   ├── ChatService.cs   # 供應商呼叫與串流協調
 │   └── …
+├── ViewModels/          # MVVM ViewModel 層
+│   ├── ViewModelBase.cs          # INotifyPropertyChanged 基底類別
+│   ├── RelayCommand.cs           # ICommand 實作
+│   ├── MainWindowViewModel.cs    # 主視窗狀態
+│   ├── ChatViewModel.cs          # 對話輸入狀態與命令
+│   ├── SettingsViewModel.cs      # 設定面板狀態
+│   └── HistoryViewModel.cs       # 歷史面板狀態
 ├── Views/
 │   ├── ChatPanel.xaml   # 主對話區
 │   ├── SettingsPanel.xaml

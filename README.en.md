@@ -161,6 +161,29 @@ Hover over the badge legend `工 視 T ?` next to the model dropdown for a quick
 
 ---
 
+## Architecture (MVVM)
+
+This project follows the **MVVM (Model-View-ViewModel)** pattern, cleanly separating UI presentation from business logic.
+
+![MVVM Architecture Diagram](doc/mvvm-architecture.png)
+
+| Layer | Responsibility |
+|---|---|
+| **Views** | XAML-only presentation; communicate with ViewModels exclusively through DataBinding and Commands |
+| **ViewModels** | Extend `ViewModelBase` (`INotifyPropertyChanged`); hold all UI state and `ICommand` implementations; never reference a View directly |
+| **Services** | Stateless business logic (API calls, settings persistence, theme management); invoked by ViewModels |
+
+### ViewModel Mapping
+
+| ViewModel | View | Responsibilities |
+|---|---|---|
+| `MainWindowViewModel` | `MainWindow.xaml` | Status bar, provider/model selection, streaming toggle, context usage indicator |
+| `ChatViewModel` | `ChatPanel.xaml` | Input text, Send/Cancel commands, slash-command hint visibility |
+| `SettingsViewModel` | `SettingsPanel.xaml` | All settings properties (API keys, font, theme, temperature) — Load & Save |
+| `HistoryViewModel` | `HistoryPanel.xaml` | Session list filtering, search, selection notification back to MainWindow |
+
+---
+
 ## Project Structure
 
 ```
@@ -173,6 +196,13 @@ OpenClaudeCodeWPF/
 │   ├── ThemeService.cs  # Theme management
 │   ├── ChatService.cs   # Orchestrates provider calls & streaming
 │   └── …
+├── ViewModels/          # MVVM ViewModel layer
+│   ├── ViewModelBase.cs          # INotifyPropertyChanged base class
+│   ├── RelayCommand.cs           # ICommand implementation
+│   ├── MainWindowViewModel.cs    # Main window state
+│   ├── ChatViewModel.cs          # Chat input state & commands
+│   ├── SettingsViewModel.cs      # Settings panel state
+│   └── HistoryViewModel.cs       # History panel state
 ├── Views/
 │   ├── ChatPanel.xaml   # Main conversation area
 │   ├── SettingsPanel.xaml
