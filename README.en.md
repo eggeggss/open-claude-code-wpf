@@ -184,6 +184,59 @@ This project follows the **MVVM (Model-View-ViewModel)** pattern, cleanly separa
 
 ---
 
+## Agent Processing Model (ReAct)
+
+The agent core follows the **ReAct (Reasoning + Acting)** pattern — the model alternates between reasoning and acting until the task is complete.
+
+![ReAct Agent Loop](doc/react-flow.png)
+
+### Flow
+
+```
+User input
+  └─ [Reason] LLM generates a response (may include tool_calls)
+       └─ [Act]    ToolOrchestrator executes tools, returns Observation
+            └─ [Reason] LLM sees results, reasons again
+                 └─ [Act]    Execute next batch of tools
+                      └─ ... (up to 20 rounds)
+                           └─ LLM stops calling tools → outputs final reply
+```
+
+### Two ReAct Implementations
+
+| Implementation | Use Case | Max Iterations | Status |
+|---|---|---|---|
+| **ChatService main loop** (API Function Calling) | Models with native tool-call support: Claude / GPT / Gemini | **20 rounds** | ✅ Active in main flow |
+| **ReActEngine** (plain-text format) | Models without Function Calling (older Ollama) | **15 rounds** | ⚠️ Implemented, not yet wired |
+
+ReActEngine communicates with the LLM using the classic text protocol:
+
+```
+Thought:       [model's reasoning]
+Action:        [tool name]
+Action Input:  {"param": "value"}
+Observation:   [tool result]
+... repeats until ...
+Final Answer:  [final response]
+```
+
+### Sub-agent Recursion
+
+`AgentTool` lets the main agent spin up a sub-agent to handle a focused sub-task:
+
+```
+Main Agent (max 20 rounds)
+  └─ calls AgentTool
+       └─ spawns new ChatService → RunSingleAsync
+            └─ Sub-agent (max 20 rounds, has all tools)
+                 └─ may call AgentTool again → Grandchild agent
+                      └─ no hard depth limit
+```
+
+> **Note:** There is currently no hard recursion depth limit. In practice, the LLM rarely goes beyond 2–3 levels spontaneously. A `depth` guard can be added to `AgentTool` to prevent runaway recursion.
+
+---
+
 ## Project Structure
 
 ```

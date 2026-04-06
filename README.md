@@ -184,6 +184,59 @@ Japan East|https://myhub-japan.openai.azure.com|sk-yyy|gpt-4o-mini|2024-02-01
 
 ---
 
+## Agent 推理模式（ReAct）
+
+本專案的 Agent 核心遵循 **ReAct（Reasoning + Acting）** 模式，讓 AI 在每輪回覆中交替進行「推理」與「行動」，直到任務完成。
+
+![ReAct Agent Loop 流程圖](doc/react-flow.png)
+
+### 運作流程
+
+```
+用戶輸入
+  └─ [Reason] LLM 生成回應（含 tool_calls）
+       └─ [Act]   ToolOrchestrator 執行工具，取得 Observation
+            └─ [Reason] LLM 看見結果，再次推理
+                 └─ [Act]   執行下一批工具
+                      └─ ...（最多 20 輪）
+                           └─ LLM 不再呼叫工具 → 輸出最終回覆
+```
+
+### 兩套 ReAct 實作
+
+| 實作 | 適用情境 | 迭代上限 | 狀態 |
+|---|---|---|---|
+| **ChatService 主迴圈**（API Function Calling） | Claude / GPT / Gemini 等原生支援工具呼叫的模型 | **20 輪** | ✅ 主流程啟用 |
+| **ReActEngine**（純文字格式） | 不支援 Function Calling 的模型（舊版 Ollama） | **15 輪** | ⚠️ 已實作，尚未接入主流程 |
+
+ReActEngine 使用標準文字格式與 LLM 交互：
+
+```
+Thought:       [模型的推理過程]
+Action:        [工具名稱]
+Action Input:  {"param": "value"}
+Observation:   [工具執行結果]
+... 反覆直到 ...
+Final Answer:  [最終回覆]
+```
+
+### 子代理（Sub-agent）遞迴
+
+`AgentTool` 讓主 Agent 可以呼叫子代理來完成聚焦型子任務：
+
+```
+主 Agent（最多 20 輪）
+  └─ 呼叫 AgentTool
+       └─ 建立新 ChatService → RunSingleAsync
+            └─ 子 Agent（最多 20 輪，同樣擁有所有工具）
+                 └─ 可再呼叫 AgentTool → 孫 Agent
+                      └─ 理論上無深度上限
+```
+
+> **注意**：目前子代理遞迴深度無硬性限制，實際上 LLM 很少自發超過 2～3 層。未來可在 `AgentTool` 加入 `depth` 參數防止無限遞迴。
+
+---
+
 ## 專案結構
 
 ```
