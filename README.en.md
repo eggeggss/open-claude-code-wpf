@@ -46,7 +46,7 @@
 ### 1. Clone
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/eggeggss/open-claude-code-wpf.git
 cd open-claude-code-wpf
 ```
 
