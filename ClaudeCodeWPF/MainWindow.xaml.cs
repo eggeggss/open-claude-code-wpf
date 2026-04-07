@@ -109,14 +109,24 @@ namespace OpenClaudeCodeWPF
 
                 case StreamEventType.MessageEnd:
                     ChatPanel.FinalizeAssistantMessage();
-                    _vm.StatusMessage = $"就緒  ·  {ConfigService.Instance.CurrentProvider} / {ConfigService.Instance.CurrentModel}";
+                    // Update token display whenever we get usage info
                     if (evt.Usage != null)
                         _vm.TokenInfo = $"↑{evt.Usage.InputTokens}  ↓{evt.Usage.OutputTokens}";
-                    ChatPanel.SetSendEnabled(true);
-                    // Fire-and-forget AI title generation for new conversations
+                    // Only re-enable input when the ENTIRE turn loop is done
+                    if (evt.IsFinalTurn)
+                    {
+                        _vm.StatusMessage = $"就緒  ·  {ConfigService.Instance.CurrentProvider} / {ConfigService.Instance.CurrentModel}";
+                        ChatPanel.SetSendEnabled(true);
+                        // Fire-and-forget AI title generation for new conversations
 #pragma warning disable CS4014
-                    TryGenerateTitleAsync();
+                        TryGenerateTitleAsync();
 #pragma warning restore CS4014
+                    }
+                    else
+                    {
+                        // Intermediate round (tool calls follow) — show progress in status bar
+                        _vm.StatusMessage = "執行工具中...";
+                    }
                     break;
 
                 case StreamEventType.Error:
@@ -343,6 +353,23 @@ namespace OpenClaudeCodeWPF
                 ChatPanel.UpdateFontSettings(
                     ConfigService.Instance.ChatFontSize,
                     ConfigService.Instance.ChatFontFamily);
+            }
+        }
+
+        private void OpenLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var logPath = LogService.Instance.TodayLogPath;
+                // Open the log file if it exists, otherwise open the log folder
+                if (System.IO.File.Exists(logPath))
+                    System.Diagnostics.Process.Start(logPath);
+                else
+                    System.Diagnostics.Process.Start(LogService.Instance.LogDirectory);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"無法開啟日誌：{ex.Message}", "錯誤", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 

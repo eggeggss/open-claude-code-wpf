@@ -146,6 +146,10 @@
                     <Button Content="設定" Width="50" Height="24" Margin="0,0,6,0"
                             Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
                             Click="SettingsButton_Click"/>
+                    <Button Content="📋 日誌" Width="55" Height="24" Margin="0,0,6,0"
+                            Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                            ToolTip="開啟今日對話日誌檔案"
+                            Click="OpenLogButton_Click"/>
                     <Button Content="新對話" Width="60" Height="24"
                             Background="{DynamicResource SendButtonBrush}" Foreground="White" BorderThickness="0"
                             Click="NewChatButton_Click"/>

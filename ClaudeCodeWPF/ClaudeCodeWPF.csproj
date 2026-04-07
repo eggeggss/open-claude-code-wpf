@@ -53,11 +53,19 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <!-- UIAutomation (built-in .NET Framework, no NuGet needed) -->
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <!-- NuGet Packages -->
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-  </ItemGroup>
+    <Reference Include="WebDriver">
+      <HintPath>..\packages\Selenium.WebDriver.4.23.0\lib\netstandard2.0\WebDriver.dll</HintPath>
+    </Reference>
+    </ItemGroup>
   <ItemGroup>
     <!-- App Entry -->
     <ApplicationDefinition Include="App.xaml">
@@ -139,6 +147,7 @@
     <Compile Include="Services\FunctionCallingAdapter.cs" />
     <Compile Include="Services\ChatService.cs" />
     <Compile Include="Services\CompactService.cs" />
+    <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\TitleGeneratorService.cs" />
     <Compile Include="Services\ContextManager.cs" />
     <Compile Include="Services\SlashCommandService.cs" />
@@ -173,6 +182,31 @@
     <Compile Include="Services\ToolSystem\Tools\WebFetchTool.cs" />
     <Compile Include="Services\ToolSystem\Tools\WebSearchTool.cs" />
     <Compile Include="Services\ToolSystem\Tools\ReadDocumentTool.cs" />
+    <!-- Browser Automation (Chrome DevTools Protocol) -->
+    <Compile Include="Services\ToolSystem\Browser\CdpBrowserService.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserConnectTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserNavigateTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserScreenshotTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserClickTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserFillTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserSelectTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserTypeTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserGetTextTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserFindElementsTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserScrollTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserExecuteJsTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\BrowserCloseTool.cs" />
+    <!-- Desktop Automation (WinAppDriver) -->
+    <Compile Include="Services\ToolSystem\Desktop\DesktopService.cs" />
+    <Compile Include="Services\ToolSystem\Tools\DesktopLaunchAppTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\DesktopAttachWindowTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\DesktopFindElementTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\DesktopClickTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\DesktopTypeTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\DesktopGetTextTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\DesktopKeyPressTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\DesktopScreenshotTool.cs" />
+    <Compile Include="Services\ToolSystem\Tools\DesktopCloseTool.cs" />
     <!-- MCP -->
     <Compile Include="Services\MCP\MCPClient.cs" />
     <Compile Include="Services\MCP\MCPConnectionManager.cs" />

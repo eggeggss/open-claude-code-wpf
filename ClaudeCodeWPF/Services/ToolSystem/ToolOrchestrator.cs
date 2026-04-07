@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaudeCodeWPF.Models;
@@ -27,7 +28,8 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem
         /// </summary>
         public async Task<List<ChatMessage>> ExecuteToolCallsAsync(
             List<ToolCall> toolCalls,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default(CancellationToken),
+            string sessionId = null)
         {
             var results = new List<ChatMessage>();
 
@@ -37,21 +39,36 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem
 
                 var inputStr = tc.Arguments?.ToString() ?? "{}";
                 OnToolStarted?.Invoke(tc.Name, tc.Id, inputStr);
+                LogService.Instance.LogToolStart(sessionId, tc.Name, tc.Id, inputStr);
 
+                var sw = Stopwatch.StartNew();
                 try
                 {
                     if (!_registry.TryGetTool(tc.Name, out var tool))
                     {
+                        sw.Stop();
                         var errResult = ToolResult.Failure($"Unknown tool: {tc.Name}");
                         OnToolFailed?.Invoke(tc.Name, tc.Id, errResult.Error);
+                        LogService.Instance.LogToolError(sessionId, tc.Name, tc.Id, errResult.Error, sw.ElapsedMilliseconds);
                         results.Add(ChatMessage.ToolResponse(tc.Id, errResult.Content, tc.Name));
                         continue;
                     }
 
                     var result = await tool.ExecuteAsync(tc.Arguments, cancellationToken);
+                    sw.Stop();
                     var content = result.IsSuccess ? result.Content : $"Error: {result.Error}";
 
-                    OnToolCompleted?.Invoke(tc.Name, tc.Id, content);
+                    if (result.IsSuccess)
+                    {
+                        OnToolCompleted?.Invoke(tc.Name, tc.Id, content);
+                        LogService.Instance.LogToolDone(sessionId, tc.Name, tc.Id, content, sw.ElapsedMilliseconds);
+                    }
+                    else
+                    {
+                        OnToolFailed?.Invoke(tc.Name, tc.Id, result.Error);
+                        LogService.Instance.LogToolError(sessionId, tc.Name, tc.Id, result.Error, sw.ElapsedMilliseconds);
+                    }
+
                     var resultMsg = ChatMessage.ToolResponse(tc.Id, content, tc.Name);
                     if (result.Images != null && result.Images.Count > 0)
                         resultMsg.ImageBlocks = result.Images;
@@ -60,7 +77,9 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem
                 catch (OperationCanceledException) { throw; }
                 catch (Exception ex)
                 {
+                    sw.Stop();
                     OnToolFailed?.Invoke(tc.Name, tc.Id, ex.Message);
+                    LogService.Instance.LogToolError(sessionId, tc.Name, tc.Id, ex.Message, sw.ElapsedMilliseconds);
                     results.Add(ChatMessage.ToolResponse(tc.Id, $"Error: {ex.Message}", tc.Name));
                 }
             }

@@ -42,6 +42,13 @@ namespace OpenClaudeCodeWPF.Models
         /// <summary>For ContextWarning: number of old messages trimmed before this call</summary>
         public int TrimmedCount { get; set; }
 
+        /// <summary>
+        /// For MessageEnd: true only when the entire ChatService turn loop is finished.
+        /// False = model produced a response but tool calls follow (more rounds coming).
+        /// UI should only re-enable input and show "就緒" when IsFinalTurn = true.
+        /// </summary>
+        public bool IsFinalTurn { get; set; }
+
         public static StreamEvent MessageStartEvent()
         {
             return new StreamEvent { Type = StreamEventType.MessageStart };
@@ -67,9 +74,9 @@ namespace OpenClaudeCodeWPF.Models
             return new StreamEvent { Type = StreamEventType.Usage, Usage = usage };
         }
 
-        public static StreamEvent MessageEndEvent(string stopReason, TokenUsage usage = null)
+        public static StreamEvent MessageEndEvent(string stopReason, TokenUsage usage = null, bool isFinalTurn = false)
         {
-            return new StreamEvent { Type = StreamEventType.MessageEnd, StopReason = stopReason, Usage = usage };
+            return new StreamEvent { Type = StreamEventType.MessageEnd, StopReason = stopReason, Usage = usage, IsFinalTurn = isFinalTurn };
         }
 
         public static StreamEvent ContextWarningEvent(double percent, int trimmed = 0)

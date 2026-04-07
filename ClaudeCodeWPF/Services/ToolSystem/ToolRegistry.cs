@@ -33,6 +33,29 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem
             Register(new AgentTool());
             Register(new OpenEdgeTool());
             Register(new ReadDocumentTool());
+            // Browser automation (Chrome DevTools Protocol)
+            Register(new BrowserConnectTool());
+            Register(new BrowserNavigateTool());
+            Register(new BrowserScreenshotTool());
+            Register(new BrowserClickTool());
+            Register(new BrowserFillTool());
+            Register(new BrowserSelectTool());
+            Register(new BrowserTypeTool());
+            Register(new BrowserGetTextTool());
+            Register(new BrowserFindElementsTool());
+            Register(new BrowserScrollTool());
+            Register(new BrowserExecuteJsTool());
+            Register(new BrowserCloseTool());
+            // Desktop automation (WinAppDriver)
+            Register(new DesktopLaunchAppTool());
+            Register(new DesktopAttachWindowTool());
+            Register(new DesktopFindElementTool());
+            Register(new DesktopClickTool());
+            Register(new DesktopTypeTool());
+            Register(new DesktopGetTextTool());
+            Register(new DesktopKeyPressTool());
+            Register(new DesktopScreenshotTool());
+            Register(new DesktopCloseTool());
         }
 
         public void Register(IToolExecutor tool)

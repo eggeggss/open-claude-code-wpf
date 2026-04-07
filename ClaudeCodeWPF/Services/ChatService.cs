@@ -15,7 +15,7 @@ namespace OpenClaudeCodeWPF.Services
     {
         private readonly ToolRegistry _toolRegistry;
         private readonly ToolOrchestrator _orchestrator;
-        private const int MaxToolIterations = 20;
+        private const int MaxToolIterations = 50;
 
         public event Action<StreamEvent> OnEvent;
         public event Action<string, string, string> OnToolStarted;
@@ -45,6 +45,9 @@ namespace OpenClaudeCodeWPF.Services
             session.Messages.Add(userMsg);
             OnEvent?.Invoke(StreamEvent.MessageStartEvent());
 
+            // Log user message
+            LogService.Instance.LogUserMessage(session.Id, userInput);
+
             var provider = ModelProviderFactory.Instance.GetCurrentProvider();
             var systemPrompt = SystemPromptService.Instance.GetSystemPrompt(ConfigService.Instance.Language);
             var tools = _toolRegistry.GetAllToolDefinitions();
@@ -55,6 +58,9 @@ namespace OpenClaudeCodeWPF.Services
                 Temperature = ConfigService.Instance.Temperature,
                 Streaming = ConfigService.Instance.StreamingEnabled
             };
+
+            // Accumulates token usage across all rounds; forwarded with the final MessageEnd
+            TokenUsage lastUsage = null;
 
             for (int iteration = 0; iteration < MaxToolIterations; iteration++)
             {
@@ -77,7 +83,11 @@ namespace OpenClaudeCodeWPF.Services
                 if (parameters.Streaming)
                 {
                     // Streaming mode
+                    // Intercept the provider's MessageEnd so we — not the provider — control
+                    // when the UI re-enables input.  We re-emit it ourselves (IsFinalTurn correct).
                     var toolCallsAccum = new List<ToolCall>();
+                    TokenUsage capturedUsage = null;
+                    string capturedStopReason = "stop";
 
                     await provider.SendMessageStreamAsync(
                         session.Messages,
@@ -85,6 +95,14 @@ namespace OpenClaudeCodeWPF.Services
                         parameters,
                         onEvent: evt =>
                         {
+                            // Suppress provider's MessageEnd — ChatService fires its own below
+                            if (evt.Type == StreamEventType.MessageEnd)
+                            {
+                                if (evt.Usage != null) capturedUsage = evt.Usage;
+                                capturedStopReason = evt.StopReason ?? capturedStopReason;
+                                return;
+                            }
+
                             OnEvent?.Invoke(evt);
 
                             if (evt.Type == StreamEventType.TextDelta)
@@ -99,6 +117,15 @@ namespace OpenClaudeCodeWPF.Services
                         cancellationToken: cancellationToken);
 
                     toolCallsInResponse = toolCallsAccum.Count > 0 ? toolCallsAccum : null;
+
+                    // If more tool rounds follow, emit intermediate MessageEnd (IsFinalTurn=false)
+                    // so the UI can close / finalise the current text bubble.
+                    // The final MessageEnd (IsFinalTurn=true) is emitted after the loop below.
+                    if (toolCallsInResponse != null)
+                        OnEvent?.Invoke(StreamEvent.MessageEndEvent(capturedStopReason, capturedUsage, isFinalTurn: false));
+                    else
+                        // No tools — store usage so the final break can emit it
+                        lastUsage = capturedUsage ?? lastUsage;
                 }
                 else
                 {
@@ -112,6 +139,7 @@ namespace OpenClaudeCodeWPF.Services
 
                     assistantContent = response.Content ?? "";
                     toolCallsInResponse = response.ToolCalls;
+                    lastUsage = response.Usage ?? lastUsage;
 
                     // Emit text as single event for non-streaming
                     if (!string.IsNullOrEmpty(assistantContent))
@@ -127,15 +155,19 @@ namespace OpenClaudeCodeWPF.Services
                 };
                 session.Messages.Add(assistantMsg);
 
-                // If no tool calls, we're done
+                // Log assistant response
+                if (!string.IsNullOrEmpty(assistantContent))
+                    LogService.Instance.LogAssistantMessage(session.Id, assistantContent);
+
+                // If no tool calls, we're done — emit final MessageEnd (IsFinalTurn=true)
                 if (toolCallsInResponse == null || toolCallsInResponse.Count == 0)
                 {
-                    OnEvent?.Invoke(StreamEvent.MessageEndEvent("end_turn"));
+                    OnEvent?.Invoke(StreamEvent.MessageEndEvent("end_turn", lastUsage, isFinalTurn: true));
                     break;
                 }
 
-                // Execute tool calls
-                var toolResults = await _orchestrator.ExecuteToolCallsAsync(toolCallsInResponse, cancellationToken);
+                // Execute tool calls (pass sessionId for logging)
+                var toolResults = await _orchestrator.ExecuteToolCallsAsync(toolCallsInResponse, cancellationToken, session.Id);
 
                 // Add tool results to session messages
                 foreach (var tr in toolResults)
