@@ -281,3 +281,18 @@ OpenClaudeCodeWPF/
 ## License
 
 MIT
+
+---
+
+## Changelog
+
+### v0.1.1
+- Replaced Playwright with Chrome DevTools Protocol (CDP) for browser automation — no longer requires node.exe or any installation
+- Added `browser_connect` / `browser_fill` / `browser_select` tools
+- `browser_connect` now supports `wait_ready` parameter — automatically waits up to 20 seconds for CDP to become ready after launching Edge
+- Increased agent tool iteration limit from 20 to 50
+- Fixed agent hang issue (IsFinalTurn) where UI would stop responding mid-loop
+- Added JSON Lines conversation log (saved to `logs/YYYY-MM-DD.jsonl` next to the exe)
+
+### v0.1.0
+- Initial release
