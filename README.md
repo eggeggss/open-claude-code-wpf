@@ -124,6 +124,42 @@ msbuild OpenClaudeCodeWPF.sln /p:Configuration=Release
 
 ---
 
+## 📦 打包成 MSI 安裝檔（WiX）
+
+> 若只想在本機執行，可跳過此節。
+
+### 先決條件
+
+1. 安裝 **WiX Toolset v3.11+**：[https://wixtoolset.org/releases/](https://wixtoolset.org/releases/)
+2. （選用）在 Visual Studio → Extensions → Manage Extensions 安裝 **WiX Toolset Visual Studio Extension**，可獲得語法提示
+
+### 建置 MSI
+
+**方法 A：Visual Studio**
+
+1. 先對 `OpenClaudeCodeWPF` 主專案 → 右鍵 → **Build**（Release / Any CPU）
+2. 再對 `ClaudeCodeWPF.Installer` → 右鍵 → **Build**（Release / x86）
+3. 輸出：`ClaudeCodeWPF.Installer\bin\Release\OpenClaudeCodeWPF-Setup.msi`
+
+**方法 B：命令列**
+
+```bat
+rem 先建置主專案
+msbuild ClaudeCodeWPF\ClaudeCodeWPF.csproj /p:Configuration=Release /p:Platform="Any CPU"
+
+rem 再建置安裝專案
+msbuild ClaudeCodeWPF.Installer\ClaudeCodeWPF.Installer.wixproj /p:Configuration=Release /p:Platform=x86
+```
+
+### 升版注意事項
+
+1. 更新 `ClaudeCodeWPF/Properties/AssemblyInfo.cs` 的 `AssemblyVersion`
+2. 更新 `ClaudeCodeWPF.Installer/Product.wxs` 中的 `<Product Version="X.Y.Z.0" ...>`
+3. **不要** 修改 `UpgradeCode` GUID，這是辨識同一產品所有版本的唯一識別碼
+4. 重新建置 MSI，舊版本會自動被移除後安裝新版
+
+---
+
 ## 設定說明
 
 點擊工具列的 **設定** 按鈕，設定分為四個分頁：

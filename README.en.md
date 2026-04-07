@@ -123,6 +123,42 @@ The executable will be at `OpenClaudeCodeWPF\bin\Release\OpenClaudeCodeWPF.exe`.
 
 ---
 
+## 📦 Packaging as MSI Installer (WiX)
+
+> Skip this section if you only need to run locally.
+
+### Prerequisites
+
+1. Install **WiX Toolset v3.11+**: [https://wixtoolset.org/releases/](https://wixtoolset.org/releases/)
+2. (Optional) Install **WiX Toolset Visual Studio Extension** via VS → Extensions → Manage Extensions for syntax support
+
+### Build the MSI
+
+**Option A: Visual Studio**
+
+1. Build the main project first: right-click `OpenClaudeCodeWPF` → **Build** (Release / Any CPU)
+2. Then build the installer: right-click `ClaudeCodeWPF.Installer` → **Build** (Release / x86)
+3. Output: `ClaudeCodeWPF.Installer\bin\Release\OpenClaudeCodeWPF-Setup.msi`
+
+**Option B: Command Line**
+
+```bat
+rem Build main project first
+msbuild ClaudeCodeWPF\ClaudeCodeWPF.csproj /p:Configuration=Release /p:Platform="Any CPU"
+
+rem Then build the installer project
+msbuild ClaudeCodeWPF.Installer\ClaudeCodeWPF.Installer.wixproj /p:Configuration=Release /p:Platform=x86
+```
+
+### Version Bump Checklist
+
+1. Update `AssemblyVersion` in `ClaudeCodeWPF/Properties/AssemblyInfo.cs`
+2. Update `<Product Version="X.Y.Z.0" ...>` in `ClaudeCodeWPF.Installer/Product.wxs`
+3. **Do NOT** change the `UpgradeCode` GUID — it uniquely identifies all versions of this product
+4. Rebuild the MSI; the old version will be automatically removed before installing the new one
+
+---
+
 ## Settings
 
 Open the **設定** button in the toolbar. Settings are organised into four tabs:
