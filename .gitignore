@@ -75,3 +75,9 @@ spec/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# ── Visual Studio upgrade / migration logs ─────────────────────
+UpgradeLog*.htm
+UpgradeLog*.xml
+_UpgradeReport_Files/
+Backup*/
