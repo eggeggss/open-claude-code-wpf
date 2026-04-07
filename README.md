@@ -30,7 +30,7 @@
 幫我開一張請假單,2026/04/11 08:00 ~ 2026/04/12 09:00 ,
 請假事由為去銀行辦事情,使用事假,
 簽核系統的位置在https://eggeggss.github.io/fake-bpm-for-test/main.html#
-登入系統的帳號是rogerroan,密碼是1234,不需要跟我確認
+登入系統的帳號是rogerroan,密碼是xxxx,不需要跟我確認
 ```
 
 
