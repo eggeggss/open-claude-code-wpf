@@ -24,11 +24,19 @@ namespace OpenClaudeCodeWPF.Services
 
         private LogService()
         {
-            // 放在 exe 同一層的 logs\ 資料夾，方便直接查看
-            _logDir = Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "logs");
-            Directory.CreateDirectory(_logDir);
+            // Program Files 沒有寫入權限，改用 %AppData%\OpenClaudeCodeWPF\logs
+            // Debug 模式仍使用 exe 目錄方便直接查看
+            string baseDir;
+#if DEBUG
+            baseDir = AppDomain.CurrentDomain.BaseDirectory;
+#else
+            baseDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "OpenClaudeCodeWPF");
+#endif
+            _logDir = Path.Combine(baseDir, "logs");
+            try { Directory.CreateDirectory(_logDir); }
+            catch { /* 無法建立目錄時靜默略過，不影響主程式 */ }
         }
 
         // ── 公開 API ──────────────────────────────────────────────────────────

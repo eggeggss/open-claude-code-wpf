@@ -286,6 +286,10 @@ MIT
 
 ## Changelog
 
+### v0.1.2
+- Fixed access denied error on startup when installed to Program Files (logs path permission issue)
+- Release build now writes logs to `%AppData%\OpenClaudeCodeWPF\logs\` to avoid UAC write restrictions
+
 ### v0.1.1
 - Replaced Playwright with Chrome DevTools Protocol (CDP) for browser automation — no longer requires node.exe or any installation
 - Added `browser_connect` / `browser_fill` / `browser_select` tools

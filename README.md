@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.1-orange)
+![Version](https://img.shields.io/badge/version-0.1.2-orange)
 
 ---
 
@@ -272,11 +272,13 @@ OpenClaudeCodeWPF/
 
 ## 📋 對話日誌 (Log)
 
-每次執行時，程式會自動在 **exe 所在目錄的 `logs\` 子資料夾**產生每日日誌：
+每次執行時，程式會自動產生每日日誌：
+
+- **Debug 版本**：exe 所在目錄的 `logs\` 子資料夾
+- **Release（安裝版）**：`%AppData%\OpenClaudeCodeWPF\logs\`
 
 ```
-OpenClaudeCodeWPF.exe
-logs/
+%AppData%\OpenClaudeCodeWPF\logs\
   2026-04-07.jsonl
   2026-04-08.jsonl
   ...
@@ -326,6 +328,10 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.2
+- 修正正式版（安裝到 Program Files）啟動時「拒絕存取 logs 路徑」錯誤
+- Release 版日誌改存至 `%AppData%\OpenClaudeCodeWPF\logs\`，避免 UAC 寫入限制
 
 ### v0.1.1
 - 瀏覽器自動化改為 Chrome DevTools Protocol（CDP），不再依賴 Playwright，無需安裝 node.exe
