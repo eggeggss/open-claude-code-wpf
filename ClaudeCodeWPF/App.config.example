@@ -11,7 +11,7 @@
   <appSettings>
 
     <!-- ===== 通用設定 ===== -->
-    <!-- 預設供應商：Anthropic | OpenAI | AzureOpenAI | Gemini | Ollama -->
+    <!-- 預設供應商：Anthropic | OpenAI | AzureOpenAI | Gemini | Ollama | OpenRouter -->
     <add key="DefaultProvider"   value="OpenAI" />
     <!-- 預設模型 ID（切換供應商後會自動更新） -->
     <add key="DefaultModel"      value="gpt-5" />
@@ -55,6 +55,13 @@
     <add key="Gemini.ApiKey"       value="AIzaSy-YOUR_KEY_HERE" />
     <add key="Gemini.BaseUrl"      value="https://generativelanguage.googleapis.com" />
     <add key="Gemini.DefaultModel" value="gemini-2.5-pro-preview-05-06" />
+
+    <!-- ===== OpenRouter ===== -->
+    <!-- 取得 API key：https://openrouter.ai/keys -->
+    <!-- 支援數百種模型，model ID 格式：provider/model-name，例如 openai/gpt-4o、anthropic/claude-3-5-sonnet -->
+    <!-- 完整模型列表：https://openrouter.ai/models -->
+    <add key="OpenRouter.ApiKey"       value="sk-or-YOUR_KEY_HERE" />
+    <add key="OpenRouter.DefaultModel" value="openai/gpt-5" />
 
     <!-- ===== Ollama（本地模型，無需 API key） ===== -->
     <!-- 啟動方式：ollama serve  |  安裝：https://ollama.com -->

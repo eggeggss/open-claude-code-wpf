@@ -34,6 +34,13 @@ namespace OpenClaudeCodeWPF.ViewModels
             set => Set(ref _geminiKey, value);
         }
 
+        private string _openRouterKey;
+        public string OpenRouterKey
+        {
+            get => _openRouterKey;
+            set => Set(ref _openRouterKey, value);
+        }
+
         private string _ollamaBase;
         public string OllamaBase
         {
@@ -143,6 +150,7 @@ namespace OpenClaudeCodeWPF.ViewModels
             OpenAIKey    = cfg.GetApiKeyForProvider("OpenAI");
             OpenAIBase   = cfg.GetBaseUrlForProvider("OpenAI");
             GeminiKey    = cfg.GetApiKeyForProvider("Gemini");
+            OpenRouterKey = cfg.GetApiKeyForProvider("OpenRouter");
             OllamaBase   = cfg.GetBaseUrlForProvider("Ollama");
             OllamaModels = cfg.OllamaModels;
             AzureNodes   = cfg.AzureOpenAINodes;
@@ -166,7 +174,8 @@ namespace OpenClaudeCodeWPF.ViewModels
             cfg.SetApiKeyForProvider("Anthropic", AnthropicKey?.Trim() ?? "");
             cfg.SetApiKeyForProvider("OpenAI",    OpenAIKey?.Trim() ?? "");
             cfg.SetBaseUrlForProvider("OpenAI",   OpenAIBase?.Trim() ?? "");
-            cfg.SetApiKeyForProvider("Gemini",    GeminiKey?.Trim() ?? "");
+            cfg.SetApiKeyForProvider("Gemini",      GeminiKey?.Trim() ?? "");
+            cfg.SetApiKeyForProvider("OpenRouter",  OpenRouterKey?.Trim() ?? "");
             cfg.SetBaseUrlForProvider("Ollama",   OllamaBase?.Trim() ?? "http://localhost:11434");
             cfg.OllamaModels     = OllamaModels?.Trim() ?? "";
             cfg.AzureOpenAINodes = AzureNodes?.Trim() ?? "";

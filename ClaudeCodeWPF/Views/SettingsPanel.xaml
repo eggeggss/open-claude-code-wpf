@@ -207,6 +207,21 @@
                         </Grid>
                         <Separator Style="{StaticResource ProviderSep}"/>
 
+                        <!-- OpenRouter -->
+                        <TextBlock Text="OpenRouter" Style="{StaticResource SectionHeader}"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="API Key" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="OpenRouterKeyBox" Grid.Column="1" Style="{StaticResource InputBox}"
+                                     Text="{Binding OpenRouterKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </Grid>
+                        <TextBlock Style="{StaticResource HintText}"
+                                   Text="支援數百種模型，預設 openai/gpt-4o-mini。可在模型選單輸入任意 OpenRouter model ID。"/>
+                        <Separator Style="{StaticResource ProviderSep}"/>
+
                         <!-- Ollama -->
                         <TextBlock Text="Ollama（本地）" Style="{StaticResource SectionHeader}"/>
                         <Grid Margin="0,0,0,6">

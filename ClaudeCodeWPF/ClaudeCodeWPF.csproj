@@ -164,6 +164,7 @@
     <Compile Include="Services\Providers\AzureOpenAIProvider.cs" />
     <Compile Include="Services\Providers\GeminiProvider.cs" />
     <Compile Include="Services\Providers\OllamaProvider.cs" />
+    <Compile Include="Services\Providers\OpenRouterProvider.cs" />
 
     <!-- Tool System -->
     <Compile Include="Services\ToolSystem\IToolExecutor.cs" />

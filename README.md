@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.2-orange)
+![Version](https://img.shields.io/badge/version-0.1.3-orange)
 
 ---
 
@@ -16,6 +16,22 @@
 [![Open Claude Code WPF Demo](https://img.youtube.com/vi/Wp2fpYDPPt0/maxresdefault.jpg)](https://www.youtube.com/watch?v=Wp2fpYDPPt0)
 
 > 點擊上方縮圖或 [前往 YouTube 觀看](https://www.youtube.com/watch?v=Wp2fpYDPPt0)
+
+---
+
+### 🤖 AI 自動填寫表單示範
+
+[![AI 填寫請假單 Demo](https://img.youtube.com/vi/hnivybYTK_0/maxresdefault.jpg)](https://www.youtube.com/watch?v=hnivybYTK_0)
+
+> 示範 AI Agent 自動操作瀏覽器完成請假申請流程。[前往 YouTube 觀看](https://www.youtube.com/watch?v=hnivybYTK_0)
+
+**使用的 Prompt：**
+```
+幫我開一張請假單,2026/04/11 08:00 ~ 2026/04/12 09:00 ,
+請假事由為去銀行辦事情,使用事假,
+簽核系統的位置在https://eggeggss.github.io/fake-bpm-for-test/main.html#
+登入系統的帳號是rogerroan,密碼是1234,不需要跟我確認
+```
 
 
 ## 功能特色
@@ -328,6 +344,11 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.3
+- 新增 OpenRouter 供應商，支援 348 個模型（含 GPT / Claude / Gemini / Llama 等）
+- 新增 AI 自動填寫表單 Demo 影片（瀏覽器 Agent 操作請假系統）
+- 更新中英文 README
 
 ### v0.1.2
 - 修正正式版（安裝到 Program Files）啟動時「拒絕存取 logs 路徑」錯誤

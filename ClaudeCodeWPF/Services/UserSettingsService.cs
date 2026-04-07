@@ -30,6 +30,7 @@ namespace OpenClaudeCodeWPF.Services
             // Per-provider API keys
             public string AnthropicApiKey  { get; set; } = "";
             public string GeminiApiKey     { get; set; } = "";
+            public string OpenRouterApiKey { get; set; } = "";
             public string OpenAIApiKey     { get; set; } = "";
             public string OpenAIBaseUrl    { get; set; } = "";
             // Ollama
@@ -168,6 +169,8 @@ namespace OpenClaudeCodeWPF.Services
                 cfg.SetApiKeyForProvider("Anthropic", _settings.AnthropicApiKey);
             if (!string.IsNullOrEmpty(_settings.GeminiApiKey))
                 cfg.SetApiKeyForProvider("Gemini", _settings.GeminiApiKey);
+            if (!string.IsNullOrEmpty(_settings.OpenRouterApiKey))
+                cfg.SetApiKeyForProvider("OpenRouter", _settings.OpenRouterApiKey);
             if (!string.IsNullOrEmpty(_settings.OpenAIApiKey))
                 cfg.SetApiKeyForProvider("OpenAI", _settings.OpenAIApiKey);
             if (!string.IsNullOrEmpty(_settings.OpenAIBaseUrl))
@@ -193,6 +196,7 @@ namespace OpenClaudeCodeWPF.Services
             // Per-provider API keys
             _settings.AnthropicApiKey  = cfg.GetApiKeyForProvider("Anthropic");
             _settings.GeminiApiKey     = cfg.GetApiKeyForProvider("Gemini");
+            _settings.OpenRouterApiKey = cfg.GetApiKeyForProvider("OpenRouter");
             _settings.OpenAIApiKey     = cfg.GetApiKeyForProvider("OpenAI");
             _settings.OpenAIBaseUrl    = cfg.GetBaseUrlForProvider("OpenAI");
             _settings.OllamaBaseUrl    = cfg.GetBaseUrlForProvider("Ollama");

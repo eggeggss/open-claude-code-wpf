@@ -24,6 +24,7 @@ namespace OpenClaudeCodeWPF.Services
                 { "AzureOpenAI", new AzureOpenAIProvider() },
                 { "Gemini",      new GeminiProvider() },
                 { "Ollama",      new OllamaProvider() },
+                { "OpenRouter",  new OpenRouterProvider() },
             };
         }
 

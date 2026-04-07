@@ -88,6 +88,10 @@ namespace OpenClaudeCodeWPF.Services
         public string OllamaDefaultModel => Get("Ollama.DefaultModel", "llama3");
         public bool OllamaUseOpenAICompat => GetBool("Ollama.UseOpenAICompat", true);
 
+        // ===== OpenRouter =====
+        public string OpenRouterApiKey      => Get("OpenRouter.ApiKey");
+        public string OpenRouterDefaultModel => Get("OpenRouter.DefaultModel", "openai/gpt-5");
+
         // ===== MCP =====
         public string MCPConfigPath => Get("MCP.ConfigPath", "mcp-servers.json");
 
@@ -176,6 +180,7 @@ namespace OpenClaudeCodeWPF.Services
                 case "AzureOpenAI": return AzureOpenAIDeploymentName ?? "gpt-4o";
                 case "Gemini":      return GeminiDefaultModel;
                 case "Ollama":      return OllamaDefaultModel;
+                case "OpenRouter":  return OpenRouterDefaultModel;
                 default:            return AnthropicDefaultModel;
             }
         }
@@ -198,6 +203,7 @@ namespace OpenClaudeCodeWPF.Services
                 case "OpenAI":      return OpenAIApiKey;
                 case "AzureOpenAI": return AzureOpenAIApiKey;
                 case "Gemini":      return GeminiApiKey;
+                case "OpenRouter":  return OpenRouterApiKey;
                 default:            return "";
             }
         }
@@ -216,6 +222,7 @@ namespace OpenClaudeCodeWPF.Services
                 case "OpenAI":    return OpenAIBaseUrl;
                 case "Gemini":    return GeminiBaseUrl;
                 case "Ollama":    return OllamaBaseUrl;
+                case "OpenRouter": return "https://openrouter.ai/api/v1";
                 default:          return "";
             }
         }

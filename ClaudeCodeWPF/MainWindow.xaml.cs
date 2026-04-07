@@ -315,16 +315,18 @@ namespace OpenClaudeCodeWPF
 
             // Keep VM in sync (VM property setter updates ConfigService)
             _vm.CurrentProvider = provider;
+            _vm.StatusMessage = $"正在載入 {provider} 模型清單…";
 
             try
             {
                 var p = ModelProviderFactory.Instance.GetProvider(provider);
                 var models = await p.GetAvailableModelsAsync();
                 _vm.SetModels(models, ConfigService.Instance.CurrentModel);
+                _vm.StatusMessage = $"就緒  ·  {provider}  ({models.Count} 個模型)";
             }
             catch (Exception ex)
             {
-                _vm.StatusMessage = $"無法載入模型: {ex.Message}";
+                _vm.StatusMessage = $"無法載入 {provider} 模型: {ex.Message}";
             }
         }
 

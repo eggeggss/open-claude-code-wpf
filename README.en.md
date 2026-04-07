@@ -16,6 +16,22 @@
 
 > Click the thumbnail above or [watch on YouTube](https://www.youtube.com/watch?v=Wp2fpYDPPt0)
 
+---
+
+### 🤖 AI Auto Form-Filling Demo
+
+[![AI Leave Request Form Demo](https://img.youtube.com/vi/hnivybYTK_0/maxresdefault.jpg)](https://www.youtube.com/watch?v=hnivybYTK_0)
+
+> Demonstrates an AI Agent automatically operating a browser to complete a leave request workflow. [Watch on YouTube](https://www.youtube.com/watch?v=hnivybYTK_0)
+
+**Prompt used:**
+```
+Help me submit a leave request: 2026/04/11 08:00 ~ 2026/04/12 09:00, reason for leave is to go
+to the bank for errands, leave type is Personal Leave (事假). The approval system is at
+https://eggeggss.github.io/fake-bpm-for-test/main.html# — login with account rogerroan,
+password xxxx. No need to confirm with me.
+```
+
 
 ## Features
 
@@ -285,6 +301,11 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.3
+- Added OpenRouter provider with 348 hardcoded models (GPT / Claude / Gemini / Llama and more)
+- Added AI auto form-filling demo video (browser Agent operating a leave request system)
+- Updated README (EN/ZH)
 
 ### v0.1.2
 - Fixed access denied error on startup when installed to Program Files (logs path permission issue)
