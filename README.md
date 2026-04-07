@@ -7,6 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
+![Version](https://img.shields.io/badge/version-0.1.1-orange)
 
 ---
 
@@ -16,13 +17,6 @@
 
 > 點擊上方縮圖或 [前往 YouTube 觀看](https://www.youtube.com/watch?v=Wp2fpYDPPt0)
 
----
-
-## 主畫面
-
-![Open Claude Code WPF 主畫面](doc/entry.png)
-
----
 
 ## 功能特色
 
@@ -276,6 +270,45 @@ OpenClaudeCodeWPF/
 
 ---
 
+## 📋 對話日誌 (Log)
+
+每次執行時，程式會自動在 **exe 所在目錄的 `logs\` 子資料夾**產生每日日誌：
+
+```
+OpenClaudeCodeWPF.exe
+logs/
+  2026-04-07.jsonl
+  2026-04-08.jsonl
+  ...
+```
+
+格式為 **JSON Lines**（每行一筆獨立 JSON），方便用任何文字編輯器或工具解析。
+
+### 記錄內容
+
+| type | 說明 |
+|------|------|
+| `user` | 使用者輸入的訊息 |
+| `assistant` | AI 回應內容 |
+| `tool_start` | 工具被呼叫（含 input 參數） |
+| `tool_done` | 工具執行成功（含結果與耗時 ms） |
+| `tool_error` | 工具執行失敗（含錯誤訊息與耗時 ms） |
+| `error` | 系統錯誤 |
+
+### 範例
+
+```jsonl
+{"time":"2026-04-07T09:10:00.123","type":"user","session":"abc","content":"幫我分析這個檔案"}
+{"time":"2026-04-07T09:10:01.456","type":"tool_start","session":"abc","tool":"read_file","id":"tc_001","input":{"path":"C:/foo.txt"}}
+{"time":"2026-04-07T09:10:01.890","type":"tool_done","session":"abc","tool":"read_file","id":"tc_001","result":"...","ms":434}
+{"time":"2026-04-07T09:10:02.100","type":"assistant","session":"abc","content":"分析結果..."}
+```
+
+> 💡 UI 標題列的「📋 日誌」按鈕可直接開啟今日的 log 檔。
+> 單一工具結果超過 2000 字元時會自動截斷，避免 log 過大。
+
+---
+
 ## 隱私與安全
 
 - **`App.config`** 已加入 `.gitignore`，不會被 commit。請複製 `App.config.example` 為 `App.config` 並在本地填入金鑰。
@@ -289,3 +322,18 @@ OpenClaudeCodeWPF/
 
 MIT
 
+
+---
+
+## Changelog
+
+### v0.1.1
+- 瀏覽器自動化改為 Chrome DevTools Protocol（CDP），不再依賴 Playwright，無需安裝 node.exe
+- 新增 `browser_connect` / `browser_fill` / `browser_select` 工具
+- `browser_connect` 新增 `wait_ready` 參數，啟動 Edge 後自動等待 CDP 就緒（最多 20 秒）
+- Agent 工具迭代上限從 20 提高至 50
+- 修正 Agent 中途停止（IsFinalTurn）問題
+- 新增 JSON Lines 對話日誌（exe 同目錄 `logs/YYYY-MM-DD.jsonl`）
+
+### v0.1.0
+- 初始版本

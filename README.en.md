@@ -16,13 +16,6 @@
 
 > Click the thumbnail above or [watch on YouTube](https://www.youtube.com/watch?v=Wp2fpYDPPt0)
 
----
-
-## Screenshot
-
-![Open Claude Code WPF 主畫面](doc/entry.png)
-
----
 
 ## Features
 
