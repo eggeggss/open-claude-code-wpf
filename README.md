@@ -33,6 +33,24 @@
 登入系統的帳號是rogerroan,密碼是xxxx,不需要跟我確認
 ```
 
+---
+
+### 📊 AI 自動製作投影片示範
+
+[![AI 製作投影片 Demo](https://img.youtube.com/vi/dyxVlLfbEPE/maxresdefault.jpg)](https://www.youtube.com/watch?v=dyxVlLfbEPE)
+
+> 示範 AI Agent 讀取網頁內容，依照金字塔原則整理重點並自動產生 PPTX 投影片。[前往 YouTube 觀看](https://www.youtube.com/watch?v=dyxVlLfbEPE)
+
+**使用的 Prompt：**
+```
+幫我把這個網站整理重點,
+1.內容請以文章的結論->每個結論的說明->更細節的說明的金字塔原則
+2.網站位置為:https://ihower.tw/blog/12373-rag-chunking
+3.產生投影片放在C:\Download\skill\ebook\rag_v3.pptx,
+4.投影片的字體使用Comic Sans MS,投影片風格活潑,白底
+5.底圖使用C:\Download\skill\ebook\background.png
+```
+
 
 ## 功能特色
 

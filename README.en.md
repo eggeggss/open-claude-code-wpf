@@ -32,6 +32,25 @@ https://eggeggss.github.io/fake-bpm-for-test/main.html# — login with account r
 password xxxx. No need to confirm with me.
 ```
 
+---
+
+### 📊 AI Auto Slide Generation Demo
+
+[![AI Slide Generation Demo](https://img.youtube.com/vi/dyxVlLfbEPE/maxresdefault.jpg)](https://www.youtube.com/watch?v=dyxVlLfbEPE)
+
+> Demonstrates an AI Agent reading a webpage, summarising key points using the Pyramid Principle, and automatically generating a PPTX presentation. [Watch on YouTube](https://www.youtube.com/watch?v=dyxVlLfbEPE)
+
+**Prompt used:**
+```
+Summarise the key points from this website:
+1. Structure the content using the Pyramid Principle:
+   conclusion → explanation of each conclusion → supporting details
+2. Website URL: https://ihower.tw/blog/12373-rag-chunking
+3. Generate a PowerPoint presentation and save it to C:\Download\skill\ebook\rag_v3.pptx
+4. Use Comic Sans MS as the font; make the slide style lively with a white background
+5. Use C:\Download\skill\ebook\background.png as the background image
+```
+
 
 ## Features
 
