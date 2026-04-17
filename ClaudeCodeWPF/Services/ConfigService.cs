@@ -14,6 +14,15 @@ namespace OpenClaudeCodeWPF.Services
         public string ApiVersion { get; set; }
     }
 
+    public class AzureResponsesNodeConfig
+    {
+        public string Name       { get; set; }
+        public string Endpoint   { get; set; }
+        public string ApiKey     { get; set; }
+        public string Model      { get; set; }
+        public string ApiVersion { get; set; }
+    }
+
     /// <summary>
     /// 讀取和管理 App.config 中的所有設定
     /// </summary>
@@ -280,6 +289,36 @@ namespace OpenClaudeCodeWPF.Services
                     ApiKey     = AzureOpenAIApiKey,
                     Deployment = AzureOpenAIDeploymentName,
                     ApiVersion = AzureOpenAIApiVersion
+                });
+            }
+            return result;
+        }
+
+        // ===== Azure Responses API 節點（用於 GPT-5.x）每行：名稱|Endpoint|ApiKey|Model|ApiVersion =====
+        private string _azureResponsesNodes;
+        public string AzureResponsesNodes
+        {
+            get => _azureResponsesNodes ?? "";
+            set => _azureResponsesNodes = value;
+        }
+
+        /// <summary>解析 Responses API 節點</summary>
+        public List<AzureResponsesNodeConfig> GetParsedAzureResponsesNodes()
+        {
+            var result = new List<AzureResponsesNodeConfig>();
+            foreach (var raw in AzureResponsesNodes.Split('\n'))
+            {
+                var line = raw.Trim();
+                if (string.IsNullOrEmpty(line)) continue;
+                var parts = line.Split('|');
+                if (parts.Length < 4) continue;
+                result.Add(new AzureResponsesNodeConfig
+                {
+                    Name       = parts[0].Trim(),
+                    Endpoint   = parts[1].Trim(),
+                    ApiKey     = parts.Length > 2 ? parts[2].Trim() : "",
+                    Model      = parts[3].Trim(),
+                    ApiVersion = parts.Length > 4 ? parts[4].Trim() : "2025-04-01-preview"
                 });
             }
             return result;

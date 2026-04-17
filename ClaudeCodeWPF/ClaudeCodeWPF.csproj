@@ -138,6 +138,8 @@
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />
     <Compile Include="ViewModels\SettingsViewModel.cs" />
+    <Compile Include="ViewModels\MCPServerItemViewModel.cs" />
+    <Compile Include="ViewModels\MCPSettingsViewModel.cs" />
     <Compile Include="ViewModels\HistoryViewModel.cs" />
     <Compile Include="ViewModels\ChatViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
@@ -162,6 +164,7 @@
     <Compile Include="Services\Providers\AnthropicProvider.cs" />
     <Compile Include="Services\Providers\OpenAIProvider.cs" />
     <Compile Include="Services\Providers\AzureOpenAIProvider.cs" />
+    <Compile Include="Services\Providers\AzureResponsesProvider.cs" />
     <Compile Include="Services\Providers\GeminiProvider.cs" />
     <Compile Include="Services\Providers\OllamaProvider.cs" />
     <Compile Include="Services\Providers\OpenRouterProvider.cs" />
@@ -211,6 +214,7 @@
     <!-- MCP -->
     <Compile Include="Services\MCP\MCPClient.cs" />
     <Compile Include="Services\MCP\MCPConnectionManager.cs" />
+    <Compile Include="Services\MCP\MCPConfigService.cs" />
     <Compile Include="Services\MCP\MCPToolBridge.cs" />
     <Compile Include="Services\MCP\MCPTypes.cs" />
     <!-- Properties -->
@@ -221,6 +225,7 @@
     <Compile Include="Utils\MarkdownRenderer.cs" />
     <Compile Include="Utils\ProcessRunner.cs" />
     <Compile Include="Utils\FileSystemHelper.cs" />
+    <Compile Include="Utils\ValueConverters.cs" />
     <!-- Localization -->
     <EmbeddedResource Include="Localization\Strings.zh-TW.resx" />
     <EmbeddedResource Include="Localization\Strings.en.resx" />

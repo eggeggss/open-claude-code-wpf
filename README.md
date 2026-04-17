@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.3-orange)
+![Version](https://img.shields.io/badge/version-0.1.4-orange)
 
 ---
 
@@ -54,7 +54,7 @@
 
 ## 功能特色
 
-- **多供應商支援** — Anthropic Claude、OpenAI GPT、Google Gemini、Ollama（本地）、Azure OpenAI（多節點）
+- **多供應商支援** — Anthropic Claude、OpenAI GPT、Google Gemini、Ollama（本地）、Azure OpenAI（多節點）、Azure Responses API（GPT-5.x）
 - **串流輸出** — 即時逐 token 顯示回覆
 - **延伸思考** — 可折疊的思考過程面板（支援 Claude / o1 / o3 系列）
 - **工具呼叫（Function Calling）** — 生成過程中即時顯示工具調用
@@ -195,15 +195,33 @@ msbuild ClaudeCodeWPF.Installer\ClaudeCodeWPF.Installer.wixproj /p:Configuration
 
 ## Azure OpenAI 多節點
 
+### Azure OpenAI Chat Completions API（GPT-4.x）
+
 在 **設定 → 供應商 API → Azure OpenAI**，每行代表一個部署節點：
 
 ```
 名稱|Endpoint URL|API金鑰|部署名稱|API版本
-East US|https://myhub-eastus.openai.azure.com|sk-xxx|gpt-4o|2024-02-01
-Japan East|https://myhub-japan.openai.azure.com|sk-yyy|gpt-4o-mini|2024-02-01
+East US|https://myhub-eastus.openai.azure.com|YOUR_API_KEY_HERE|gpt-4o|2024-12-01-preview
+Japan East|https://myhub-japan.openai.azure.com|YOUR_API_KEY_HERE|gpt-4o-mini|2024-12-01-preview
 ```
 
 儲存後，每個節點會顯示為模型下拉選單中的一個選項。
+
+### Azure Responses API（GPT-5.x / Codex）
+
+在 **設定 → 供應商 API → Azure Responses**，每行代表一個模型節點：
+
+```
+名稱|Endpoint URL|API金鑰|模型名稱|API版本
+GPT5-Codex|https://your-instance.openai.azure.com/|YOUR_API_KEY_HERE|gpt-5.1-codex-mini|2025-04-01-preview
+GPT5-Mini|https://your-instance.openai.azure.com/|YOUR_API_KEY_HERE|gpt-5-mini|2025-04-01-preview
+```
+
+**注意事項：**
+- Azure Responses API 使用不同的端點格式（`/openai/responses`），與 Chat Completions API 不相容
+- 認證方式為 `Authorization: Bearer {API_KEY}`（非 `api-key` header）
+- Codex 模型（如 `gpt-5.1-codex-mini`）不支援 `temperature` 參數
+- Function calling 格式為原生 `function_call` / `function_call_output`，不同於 Chat Completions 的 `tool_calls`
 
 ---
 
@@ -398,6 +416,17 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.4 (2026-04-17)
+- **新增** Azure Responses API 支援（GPT-5.x / Codex 系列）
+  - 獨立的 `AzureResponsesProvider`，使用 `/openai/responses` 端點
+  - 支援 `gpt-5.1-codex-mini`、`gpt-5-mini` 等新模型
+  - 自動處理 Codex 模型不支援 `temperature` 參數的限制
+  - 原生 `function_call` / `function_call_output` 格式，支援 function calling
+- **修正** Azure Responses API streaming 解析（使用 `item_id` 匹配 delta 事件）
+- **修正** 非串流回應的 function call 解析（output 陣列頂層 `type: "function_call"`）
+- **更新** 設定 UI 新增 Azure Responses 獨立配置區塊
+- **更新** 配置儲存/載入邏輯，Azure Responses 節點支援持久化
 
 ### v0.1.3
 - 新增 OpenRouter 供應商，支援 348 個模型（含 GPT / Claude / Gemini / Llama 等）

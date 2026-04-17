@@ -54,7 +54,7 @@ Summarise the key points from this website:
 
 ## Features
 
-- **Multi-provider support** — Anthropic Claude, OpenAI GPT, Google Gemini, Ollama (local), Azure OpenAI (multi-node)
+- **Multi-provider support** — Anthropic Claude, OpenAI GPT, Google Gemini, Ollama (local), Azure OpenAI (multi-node), Azure Responses API (GPT-5.x)
 - **Streaming responses** — real-time token-by-token output
 - **Extended thinking** — displays the model's reasoning process in a collapsible panel (for Claude / o1 / o3 series)
 - **Tool / Function Calling** — shows tool invocations inline during generation
@@ -195,15 +195,33 @@ Settings are auto-saved to `%APPDATA%\OpenClaudeCodeWPF\usersettings.json`.
 
 ## Azure OpenAI Multi-node
 
-In **Settings → 供應商 API → Azure OpenAI**，each line represents one deployment node:
+### Azure OpenAI Chat Completions API (GPT-4.x)
+
+In **Settings → 供應商 API → Azure OpenAI**, each line represents one deployment node:
 
 ```
-名稱|Endpoint URL|API金鑰|部署名稱|API版本
-East US|https://myhub-eastus.openai.azure.com|sk-xxx|gpt-4o|2024-02-01
-Japan East|https://myhub-japan.openai.azure.com|sk-yyy|gpt-4o-mini|2024-02-01
+Name|Endpoint URL|API Key|Deployment Name|API Version
+East US|https://myhub-eastus.openai.azure.com|YOUR_API_KEY_HERE|gpt-4o|2024-12-01-preview
+Japan East|https://myhub-japan.openai.azure.com|YOUR_API_KEY_HERE|gpt-4o-mini|2024-12-01-preview
 ```
 
 After saving, each node appears as a selectable model in the model dropdown.
+
+### Azure Responses API (GPT-5.x / Codex)
+
+In **Settings → 供應商 API → Azure Responses**, each line represents one model node:
+
+```
+Name|Endpoint URL|API Key|Model Name|API Version
+GPT5-Codex|https://your-instance.openai.azure.com/|YOUR_API_KEY_HERE|gpt-5.1-codex-mini|2025-04-01-preview
+GPT5-Mini|https://your-instance.openai.azure.com/|YOUR_API_KEY_HERE|gpt-5-mini|2025-04-01-preview
+```
+
+**Important notes:**
+- Azure Responses API uses a different endpoint format (`/openai/responses`), incompatible with Chat Completions API
+- Authentication uses `Authorization: Bearer {API_KEY}` (not `api-key` header)
+- Codex models (e.g. `gpt-5.1-codex-mini`) do not support the `temperature` parameter
+- Function calling format is native `function_call` / `function_call_output`, different from Chat Completions' `tool_calls`
 
 ---
 
@@ -356,6 +374,19 @@ MIT
 ---
 
 ## Changelog
+
+## Changelog
+
+### v0.1.4 (2026-04-17)
+- **Added** Azure Responses API support (GPT-5.x / Codex series)
+  - Dedicated `AzureResponsesProvider` using `/openai/responses` endpoint
+  - Supports new models like `gpt-5.1-codex-mini`, `gpt-5-mini`
+  - Automatically handles Codex models' lack of `temperature` parameter support
+  - Native `function_call` / `function_call_output` format with function calling support
+- **Fixed** Azure Responses API streaming parsing (using `item_id` to match delta events)
+- **Fixed** Non-streaming function call parsing (output array top-level `type: "function_call"`)
+- **Updated** Settings UI with dedicated Azure Responses configuration section
+- **Updated** Configuration save/load logic with persistence support for Azure Responses nodes
 
 ### v0.1.3
 - Added OpenRouter provider with 348 hardcoded models (GPT / Claude / Gemini / Llama and more)

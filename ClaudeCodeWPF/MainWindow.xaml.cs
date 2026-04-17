@@ -9,6 +9,7 @@ using System.Windows;
 using OpenClaudeCodeWPF.Models;
 using OpenClaudeCodeWPF.Services;
 using OpenClaudeCodeWPF.Services.DocumentProcessing;
+using OpenClaudeCodeWPF.Services.MCP;
 using OpenClaudeCodeWPF.ViewModels;
 
 namespace OpenClaudeCodeWPF
@@ -297,6 +298,26 @@ namespace OpenClaudeCodeWPF
             // Load or create initial session
             var session = ConversationManager.Instance.GetOrCreateActiveSession();
             ChatPanel.LoadSession(session);
+
+            // Auto-connect enabled MCP servers (fire and forget)
+            AutoConnectMcpServersAsync();
+        }
+
+        private async void AutoConnectMcpServersAsync()
+        {
+            var configs = MCPConfigService.Instance.LoadAll();
+            foreach (var cfg in configs)
+            {
+                if (!cfg.Enabled) continue;
+                try
+                {
+                    await MCPConnectionManager.Instance.ConnectAsync(cfg, CancellationToken.None);
+                }
+                catch
+                {
+                    // Non-fatal: log or ignore per-server errors
+                }
+            }
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

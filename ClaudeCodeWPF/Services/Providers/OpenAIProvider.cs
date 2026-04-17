@@ -33,7 +33,7 @@ namespace OpenClaudeCodeWPF.Services.Providers
             _fcAdapter = new FunctionCallingAdapter();
         }
 
-        public async Task<ModelResponse> SendMessageAsync(
+        public virtual async Task<ModelResponse> SendMessageAsync(
             List<ChatMessage> messages,
             string systemPrompt,
             ModelParameters parameters,
@@ -74,7 +74,7 @@ namespace OpenClaudeCodeWPF.Services.Providers
             throw new Exception($"{ProviderName}: max retries exceeded");
         }
 
-        public async Task SendMessageStreamAsync(
+        public virtual async Task SendMessageStreamAsync(
             List<ChatMessage> messages,
             string systemPrompt,
             ModelParameters parameters,

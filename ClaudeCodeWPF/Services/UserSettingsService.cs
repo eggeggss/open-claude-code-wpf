@@ -38,6 +38,8 @@ namespace OpenClaudeCodeWPF.Services
             public string OllamaModels     { get; set; } = "";
             // Azure OpenAI multi-node (each line: Name|Endpoint|ApiKey|Deployment|ApiVersion)
             public string AzureOpenAINodes { get; set; } = "";
+            // Azure Responses API for GPT-5.x (each line: Name|Endpoint|ApiKey|Model|ApiVersion)
+            public string AzureResponsesNodes { get; set; } = "";
             // UI layout state
             public bool   SidebarCollapsed { get; set; } = true;
             public double SidebarWidth     { get; set; } = 240;
@@ -112,6 +114,12 @@ namespace OpenClaudeCodeWPF.Services
             set { _settings.AzureOpenAINodes = value; }
         }
 
+        public string AzureResponsesNodes
+        {
+            get => _settings.AzureResponsesNodes;
+            set { _settings.AzureResponsesNodes = value; }
+        }
+
         public bool SidebarCollapsed
         {
             get => _settings.SidebarCollapsed;
@@ -178,6 +186,7 @@ namespace OpenClaudeCodeWPF.Services
             cfg.SetBaseUrlForProvider("Ollama", _settings.OllamaBaseUrl);
             cfg.OllamaModels      = _settings.OllamaModels;
             cfg.AzureOpenAINodes  = _settings.AzureOpenAINodes;
+            cfg.AzureResponsesNodes = _settings.AzureResponsesNodes;
         }
 
         /// <summary>從 ConfigService 快照目前設定（儲存前呼叫）</summary>
@@ -202,6 +211,7 @@ namespace OpenClaudeCodeWPF.Services
             _settings.OllamaBaseUrl    = cfg.GetBaseUrlForProvider("Ollama");
             _settings.OllamaModels     = cfg.OllamaModels;
             _settings.AzureOpenAINodes = cfg.AzureOpenAINodes;
+            _settings.AzureResponsesNodes = cfg.AzureResponsesNodes;
         }
     }
 }

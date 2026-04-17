@@ -62,6 +62,13 @@ namespace OpenClaudeCodeWPF.ViewModels
             set => Set(ref _azureNodes, value);
         }
 
+        private string _azureResponsesNodes;
+        public string AzureResponsesNodes
+        {
+            get => _azureResponsesNodes;
+            set => Set(ref _azureResponsesNodes, value);
+        }
+
         // ── Model Parameters ──────────────────────────────────────────────
         private double _temperature;
         public double Temperature
@@ -154,6 +161,7 @@ namespace OpenClaudeCodeWPF.ViewModels
             OllamaBase   = cfg.GetBaseUrlForProvider("Ollama");
             OllamaModels = cfg.OllamaModels;
             AzureNodes   = cfg.AzureOpenAINodes;
+            AzureResponsesNodes = cfg.AzureResponsesNodes;
 
             Temperature     = cfg.Temperature;
             MaxTokensText   = cfg.MaxTokens.ToString();
@@ -179,6 +187,7 @@ namespace OpenClaudeCodeWPF.ViewModels
             cfg.SetBaseUrlForProvider("Ollama",   OllamaBase?.Trim() ?? "http://localhost:11434");
             cfg.OllamaModels     = OllamaModels?.Trim() ?? "";
             cfg.AzureOpenAINodes = AzureNodes?.Trim() ?? "";
+            cfg.AzureResponsesNodes = AzureResponsesNodes?.Trim() ?? "";
 
             cfg.Temperature      = Temperature;
             cfg.StreamingEnabled = StreamingEnabled;
@@ -209,5 +218,8 @@ namespace OpenClaudeCodeWPF.ViewModels
             CurrentTheme = themeName;
             ThemeApplied?.Invoke(themeName);
         }
+
+        // ── MCP ──────────────────────────────────────────────────────────────
+        public MCPSettingsViewModel McpVM { get; } = new MCPSettingsViewModel();
     }
 }

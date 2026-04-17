@@ -62,14 +62,25 @@ namespace OpenClaudeCodeWPF.Services.MCP
         public JObject InputSchema { get; set; }
     }
 
+    public enum McpServerType
+    {
+        Local,
+        Stdio,
+        Http,
+        Sse
+    }
+
     public class MCPServerConfig
     {
         public string Name { get; set; }
+        public McpServerType Type { get; set; } = McpServerType.Stdio;
         public string Command { get; set; }
         public List<string> Args { get; set; } = new List<string>();
         public Dictionary<string, string> Env { get; set; } = new Dictionary<string, string>();
         public string Transport { get; set; } = "stdio"; // "stdio" or "sse"
         public string SseUrl { get; set; }
+        public string Tools { get; set; } = "*";
+        public bool Enabled { get; set; } = true;
     }
 
     public class MCPResource

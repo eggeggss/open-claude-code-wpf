@@ -52,7 +52,7 @@ namespace OpenClaudeCodeWPF.ViewModels
         // ── Provider / Model ────────────────────────────────────────────
 
         public List<string> Providers { get; } =
-            new List<string> { "Anthropic", "OpenAI", "AzureOpenAI", "Gemini", "Ollama", "OpenRouter" };
+            new List<string> { "Anthropic", "OpenAI", "AzureOpenAI", "AzureResponses", "Gemini", "Ollama", "OpenRouter" };
 
         private string _currentProvider;
         public string CurrentProvider

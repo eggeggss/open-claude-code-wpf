@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenClaudeCodeWPF.Models;
@@ -41,6 +42,25 @@ namespace OpenClaudeCodeWPF.Services
                         ["description"] = t.Description,
                         ["parameters"] = t.InputSchema
                     }
+                });
+            }
+            return arr;
+        }
+
+        /// <summary>
+        /// Azure Responses API (GPT-5.x) uses flat tool format with name/description at top level
+        /// </summary>
+        public JArray ToResponsesApiTools(List<ToolDefinition> tools)
+        {
+            var arr = new JArray();
+            foreach (var t in tools)
+            {
+                arr.Add(new JObject
+                {
+                    ["type"] = "function",
+                    ["name"] = t.Name,
+                    ["description"] = t.Description,
+                    ["parameters"] = t.InputSchema
                 });
             }
             return arr;
@@ -257,6 +277,63 @@ namespace OpenClaudeCodeWPF.Services
                         assistantMsg["content"] = msg.Content;
                     assistantMsg["tool_calls"] = toolCalls;
                     arr.Add(assistantMsg);
+                }
+                else
+                {
+                    arr.Add(new JObject
+                    {
+                        ["role"] = msg.Role,
+                        ["content"] = msg.Content ?? ""
+                    });
+                }
+            }
+            return arr;
+        }
+
+        /// <summary>
+        /// Build messages for Azure Responses API (GPT-5.x).
+        /// Uses native format: function_call / function_call_output instead of tool_calls / role:tool
+        /// </summary>
+        public JArray BuildResponsesApiMessages(List<ChatMessage> messages, string systemPrompt)
+        {
+            var arr = new JArray();
+
+            if (!string.IsNullOrEmpty(systemPrompt))
+                arr.Add(new JObject { ["role"] = "system", ["content"] = systemPrompt });
+
+            foreach (var msg in messages)
+            {
+                if (msg.Role == "system") continue;
+
+                if (msg.Role == "tool")
+                {
+                    // Responses API: function_call_output
+                    arr.Add(new JObject
+                    {
+                        ["type"] = "function_call_output",
+                        ["call_id"] = msg.ToolCallId ?? "",
+                        ["output"] = msg.Content ?? ""
+                    });
+                }
+                else if (msg.Role == "assistant" && msg.ToolCalls != null && msg.ToolCalls.Count > 0)
+                {
+                    // If assistant has text content, emit that as a message first
+                    if (!string.IsNullOrEmpty(msg.Content))
+                    {
+                        arr.Add(new JObject { ["role"] = "assistant", ["content"] = msg.Content });
+                    }
+
+                    // Responses API: each tool call becomes a function_call item
+                    foreach (var tc in msg.ToolCalls)
+                    {
+                        arr.Add(new JObject
+                        {
+                            ["type"] = "function_call",
+                            ["call_id"] = tc.Id ?? Guid.NewGuid().ToString(),
+                            ["name"] = tc.Name ?? "",
+                            ["arguments"] = tc.Arguments?.ToString() ?? "{}"
+                        });
+                    }
                 }
                 else
                 {

@@ -19,12 +19,13 @@ namespace OpenClaudeCodeWPF.Services
         {
             _providers = new Dictionary<string, IModelProvider>(StringComparer.OrdinalIgnoreCase)
             {
-                { "Anthropic",   new AnthropicProvider() },
-                { "OpenAI",      new OpenAIProvider() },
-                { "AzureOpenAI", new AzureOpenAIProvider() },
-                { "Gemini",      new GeminiProvider() },
-                { "Ollama",      new OllamaProvider() },
-                { "OpenRouter",  new OpenRouterProvider() },
+                { "Anthropic",       new AnthropicProvider() },
+                { "OpenAI",          new OpenAIProvider() },
+                { "AzureOpenAI",     new AzureOpenAIProvider() },
+                { "AzureResponses",  new AzureResponsesProvider() },
+                { "Gemini",          new GeminiProvider() },
+                { "Ollama",          new OllamaProvider() },
+                { "OpenRouter",      new OpenRouterProvider() },
             };
         }
 

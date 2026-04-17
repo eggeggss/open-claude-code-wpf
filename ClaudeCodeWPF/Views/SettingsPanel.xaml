@@ -2,6 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:OpenClaudeCodeWPF.ViewModels"
+        xmlns:utils="clr-namespace:OpenClaudeCodeWPF.Utils"
+        xmlns:mcp="clr-namespace:OpenClaudeCodeWPF.Services.MCP"
         Title="設定" Height="760" Width="640"
         Background="#1E1E1E" WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize" MinWidth="500" MinHeight="500">
@@ -119,6 +121,17 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <!-- Value Converters for MCP tab -->
+        <utils:NullToVisibilityConverter x:Key="NullToHidden"/>
+        <utils:BoolToVisibilityConverter x:Key="BoolToVisible"/>
+        <ObjectDataProvider x:Key="McpServerTypes"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}"
+                            xmlns:sys="clr-namespace:System;assembly=mscorlib">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="mcp:McpServerType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
     </Window.Resources>
 
     <Grid>
@@ -247,6 +260,15 @@
                         </TextBlock>
                         <TextBox x:Name="AzureNodesBox" Style="{StaticResource MultiLineBox}" Height="110"
                                  Text="{Binding AzureNodes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <!-- Azure Responses API (GPT-5.x) -->
+                        <TextBlock Text="Azure Responses API（GPT-5.x 系列）" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
+                        <TextBlock Style="{StaticResource HintText}">
+                            格式（一行一個節點）：名稱|端點URL|API金鑰|模型名稱|API版本<LineBreak/>
+                            例：GPT-5.1|https://myhub.openai.azure.com|sk-xxx|gpt-5.1-codex-mini|2025-04-01-preview
+                        </TextBlock>
+                        <TextBox x:Name="AzureResponsesNodesBox" Style="{StaticResource MultiLineBox}" Height="110"
+                                 Text="{Binding AzureResponsesNodes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                     </StackPanel>
                 </ScrollViewer>
@@ -430,6 +452,176 @@
                              VerticalScrollBarVisibility="Auto"
                              CaretBrush="#CCCCCC"
                              Text="{Binding SystemPrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+            </TabItem>
+
+            <!-- ══ Tab 5: MCP 伺服器 ══ -->
+            <TabItem Header="🔌 MCP 伺服器">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Server List -->
+                    <Border Grid.Column="0" BorderBrush="#3E3E42" BorderThickness="0,0,1,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ListBox x:Name="McpServerList" Grid.Row="0"
+                                     Background="#252526" BorderThickness="0"
+                                     ItemsSource="{Binding McpVM.Servers}"
+                                     SelectedItem="{Binding McpVM.SelectedServer, Mode=TwoWay}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="Padding" Value="8,6"/>
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="#CCCCCC"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="#37373D"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#2A2D2E"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontWeight="SemiBold" FontSize="12"
+                                                           Foreground="#EEEEEE"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                    <Border Background="#3C3F41" CornerRadius="2"
+                                                            Padding="3,1" Margin="0,0,4,0">
+                                                        <TextBlock Text="{Binding TypeLabel}"
+                                                                   FontSize="9" Foreground="#9CDCFE"/>
+                                                    </Border>
+                                                    <Ellipse Width="7" Height="7"
+                                                             Fill="{Binding StatusColor}"
+                                                             VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="{Binding StatusText}"
+                                                               FontSize="10" Foreground="#888888"
+                                                               VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <!-- Enable Toggle -->
+                                            <CheckBox Grid.Column="1"
+                                                      IsChecked="{Binding Enabled, Mode=TwoWay}"
+                                                      VerticalAlignment="Center"
+                                                      ToolTip="啟用/停用"
+                                                      Command="{Binding DataContext.McpVM.ToggleEnabledCommand,
+                                                                RelativeSource={RelativeSource AncestorType=Window}}"
+                                                      CommandParameter="{Binding}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <!-- Add button -->
+                            <Button Grid.Row="1" Content="＋ 新增伺服器"
+                                    Margin="8" Height="28"
+                                    Background="#FF6000" Foreground="White" BorderThickness="0"
+                                    FontSize="12"
+                                    Command="{Binding McpVM.AddNewCommand}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right: Edit Form -->
+                    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="20,12,20,20"
+                                    Visibility="{Binding McpVM.EditingServer, Converter={StaticResource NullToHidden}}">
+
+                            <TextBlock Text="{Binding McpVM.FormTitle}"
+                                       FontSize="14" FontWeight="Bold"
+                                       Foreground="#FF6000" Margin="0,0,0,16"/>
+
+                            <!-- Server Name -->
+                            <TextBlock Text="Server Name" Foreground="#9CDCFE" FontSize="11" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding McpVM.EditingServer.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource InputBox}" Margin="0,0,0,12"
+                                     ToolTip="此 MCP 伺服器的唯一識別名稱"/>
+
+                            <!-- Server Type -->
+                            <TextBlock Text="Server Type" Foreground="#9CDCFE" FontSize="11" Margin="0,0,0,4"/>
+                            <ComboBox x:Name="McpTypeCombo"
+                                      Margin="0,0,0,12"
+                                      Background="#2D2D30" Foreground="#CCCCCC"
+                                      BorderBrush="#3E3E42"
+                                      ItemsSource="{Binding Source={StaticResource McpServerTypes}}"
+                                      SelectedItem="{Binding McpVM.EditingServer.Type, Mode=TwoWay}"/>
+
+                            <!-- Command (Local / STDIO) -->
+                            <StackPanel Visibility="{Binding McpVM.EditingServer.IsProcessBased, Converter={StaticResource BoolToVisible}}">
+                                <TextBlock Text="Command" Foreground="#9CDCFE" FontSize="11" Margin="0,0,0,4"/>
+                                <TextBlock Text="啟動伺服器的命令 (例如: python -m my_server)"
+                                           Foreground="#666666" FontSize="10" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding McpVM.EditingServer.Command, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource InputBox}" Margin="0,0,0,12"/>
+                            </StackPanel>
+
+                            <!-- URL (HTTP / SSE) -->
+                            <StackPanel Visibility="{Binding McpVM.EditingServer.IsUrlBased, Converter={StaticResource BoolToVisible}}">
+                                <TextBlock Text="URL" Foreground="#9CDCFE" FontSize="11" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding McpVM.EditingServer.Url, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource InputBox}" Margin="0,0,0,12"
+                                         ToolTip="HTTP 或 SSE 端點 URL"/>
+                            </StackPanel>
+
+                            <!-- Environment Variables -->
+                            <TextBlock Text="Environment Variables" Foreground="#9CDCFE" FontSize="11" Margin="0,0,0,4"/>
+                            <TextBlock Text="每行一個，格式: KEY=VALUE"
+                                       Foreground="#666666" FontSize="10" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding McpVM.EditingServer.EnvVarsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource InputBox}"
+                                     Height="80" AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="NoWrap"
+                                     Margin="0,0,0,12"/>
+
+                            <!-- Tools -->
+                            <TextBlock Text="Tools" Foreground="#9CDCFE" FontSize="11" Margin="0,0,0,4"/>
+                            <TextBlock Text="開放的工具：* 代表全部，或逗號分隔清單"
+                                       Foreground="#666666" FontSize="10" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding McpVM.EditingServer.Tools, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource InputBox}" Margin="0,0,0,16"/>
+
+                            <!-- Action Buttons -->
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="💾 儲存" Width="80" Height="28" Margin="0,0,8,0"
+                                        Background="#FF6000" Foreground="White" BorderThickness="0"
+                                        Command="{Binding McpVM.SaveCommand}"/>
+                                <Button Content="✖ 取消" Width="70" Height="28" Margin="0,0,8,0"
+                                        Background="#3C3C3C" Foreground="#CCCCCC" BorderThickness="0"
+                                        Command="{Binding McpVM.CancelCommand}"/>
+                                <Button Content="🗑 刪除" Width="70" Height="28" Margin="0,0,16,0"
+                                        Background="#6E3C3C" Foreground="#CCCCCC" BorderThickness="0"
+                                        Command="{Binding McpVM.DeleteCommand}"/>
+                                <Separator Width="1" Background="#3E3E42" Margin="0,0,16,0"/>
+                                <Button Content="▶ 連接" Width="70" Height="28" Margin="0,0,8,0"
+                                        Background="#2D6A4F" Foreground="White" BorderThickness="0"
+                                        Command="{Binding McpVM.ConnectCommand}"/>
+                                <Button Content="⏹ 中斷" Width="70" Height="28"
+                                        Background="#3C3C3C" Foreground="#CCCCCC" BorderThickness="0"
+                                        Command="{Binding McpVM.DisconnectCommand}"/>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
                 </Grid>
             </TabItem>
 
