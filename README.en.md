@@ -375,7 +375,14 @@ MIT
 
 ## Changelog
 
-## Changelog
+### v0.1.5 (2026-04-18)
+- **Added** MCP HTTP / SSE transport protocol support
+  - `MCPClient` now supports HTTP POST JSON-RPC transport (previously stdio only)
+  - Automatic SSL certificate validation handling (`ServerCertificateCustomValidationCallback`)
+  - Support for HTTP/SSE type MCP server connections (using `SseUrl` as endpoint)
+  - HTTP/SSE configuration fields in UI are now fully functional
+- **Fixed** MCP HTTP connection certificate error "Cannot start because certificate name not provided"
+- **Refactored** `SendRequestAsync` split into `SendStdioRequestAsync` and `SendHttpRequestAsync`
 
 ### v0.1.4 (2026-04-17)
 - **Added** Azure Responses API support (GPT-5.x / Codex series)

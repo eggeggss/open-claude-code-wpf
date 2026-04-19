@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,12 +12,13 @@ using Newtonsoft.Json.Linq;
 
 namespace OpenClaudeCodeWPF.Services.MCP
 {
-    /// <summary>MCP 客戶端 — 通過 stdio 與 MCP 伺服器通訊</summary>
+    /// <summary>MCP 客戶端 — 支援 stdio 與 HTTP 傳輸</summary>
     public class MCPClient : IDisposable
     {
         private Process _process;
         private StreamWriter _stdin;
         private StreamReader _stdout;
+        private HttpClient _httpClient;
         private int _nextId = 1;
         private readonly Dictionary<int, TaskCompletionSource<MCPResponse>> _pending = new Dictionary<int, TaskCompletionSource<MCPResponse>>();
         private Task _readLoop;
@@ -36,6 +38,18 @@ namespace OpenClaudeCodeWPF.Services.MCP
         {
             _cts = new CancellationTokenSource();
 
+            if (Config.Type == McpServerType.Http || Config.Type == McpServerType.Sse)
+            {
+                await ConnectHttpAsync(cancellationToken);
+            }
+            else
+            {
+                await ConnectStdioAsync(cancellationToken);
+            }
+        }
+
+        private async Task ConnectStdioAsync(CancellationToken cancellationToken)
+        {
             var psi = new ProcessStartInfo
             {
                 FileName = Config.Command,
@@ -87,6 +101,39 @@ namespace OpenClaudeCodeWPF.Services.MCP
             IsConnected = true;
         }
 
+        private async Task ConnectHttpAsync(CancellationToken cancellationToken)
+        {
+            // Create HttpClient with SSL validation callback to accept self-signed certs
+            var handler = new HttpClientHandler();
+            handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+            
+            _httpClient = new HttpClient(handler);
+            _httpClient.Timeout = TimeSpan.FromSeconds(30);
+
+            // Initialize
+            var initResult = await SendRequestAsync("initialize", new JObject
+            {
+                ["protocolVersion"] = "2024-11-05",
+                ["capabilities"] = new JObject { ["tools"] = new JObject() },
+                ["clientInfo"] = new JObject { ["name"] = "ClaudeCodeWPF", ["version"] = "1.0" }
+            }, cancellationToken);
+
+            if (!initResult.IsSuccess)
+                throw new Exception($"MCP init failed: {initResult.Error?.Message}");
+
+            // Fetch tools
+            var toolsResult = await SendRequestAsync("tools/list", null, cancellationToken);
+            var tools = toolsResult.Result?["tools"]?.ToObject<List<MCPTool>>() ?? new List<MCPTool>();
+
+            ServerInfo = new MCPServerInfo
+            {
+                Name = Config.Name,
+                Tools = tools
+            };
+
+            IsConnected = true;
+        }
+
         public async Task<JObject> CallToolAsync(string toolName, JObject arguments, CancellationToken cancellationToken = default(CancellationToken))
         {
             var result = await SendRequestAsync("tools/call", new JObject
@@ -115,6 +162,18 @@ namespace OpenClaudeCodeWPF.Services.MCP
 
         private async Task<MCPResponse> SendRequestAsync(string method, JObject @params, CancellationToken cancellationToken)
         {
+            if (_httpClient != null)
+            {
+                return await SendHttpRequestAsync(method, @params, cancellationToken);
+            }
+            else
+            {
+                return await SendStdioRequestAsync(method, @params, cancellationToken);
+            }
+        }
+
+        private async Task<MCPResponse> SendStdioRequestAsync(string method, JObject @params, CancellationToken cancellationToken)
+        {
             var id = _nextId++;
             var tcs = new TaskCompletionSource<MCPResponse>();
 
@@ -131,6 +190,21 @@ namespace OpenClaudeCodeWPF.Services.MCP
             {
                 return await tcs.Task;
             }
+        }
+
+        private async Task<MCPResponse> SendHttpRequestAsync(string method, JObject @params, CancellationToken cancellationToken)
+        {
+            var id = _nextId++;
+            var request = new MCPRequest { Method = method, Id = id, Params = @params };
+            var json = JsonConvert.SerializeObject(request);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = Config.SseUrl; // For HTTP, use SseUrl as the endpoint
+            var response = await _httpClient.PostAsync(url, content, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var responseText = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<MCPResponse>(responseText);
         }
 
         private async Task SendNotificationAsync(string method, JObject @params = null)
@@ -179,8 +253,16 @@ namespace OpenClaudeCodeWPF.Services.MCP
             _cts?.Cancel();
             IsConnected = false;
 
-            try { _stdin?.Close(); } catch { }
-            try { if (!_process.HasExited) _process.Kill(); } catch { }
+            if (_httpClient != null)
+            {
+                try { _httpClient.Dispose(); } catch { }
+                _httpClient = null;
+            }
+            else
+            {
+                try { _stdin?.Close(); } catch { }
+                try { if (_process != null && !_process.HasExited) _process.Kill(); } catch { }
+            }
         }
 
         public void Dispose()

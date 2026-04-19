@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.4-orange)
+![Version](https://img.shields.io/badge/version-0.1.5-orange)
 
 ---
 
@@ -416,6 +416,15 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.5 (2026-04-18)
+- **新增** MCP HTTP / SSE 傳輸協定支援
+  - `MCPClient` 新增 HTTP POST JSON-RPC 傳輸模式（原本僅支援 stdio）
+  - 自動處理 SSL 憑證驗證（`ServerCertificateCustomValidationCallback`）
+  - 支援 HTTP/SSE 類型的 MCP 伺服器連接（使用 `SseUrl` 作為端點）
+  - UI 中的 HTTP/SSE 設定欄位現已完全可用
+- **修正** MCP HTTP 連接時的憑證錯誤「由於未提供憑證名稱，所以無法啟動該區」
+- **重構** `SendRequestAsync` 分離為 `SendStdioRequestAsync` 和 `SendHttpRequestAsync`
 
 ### v0.1.4 (2026-04-17)
 - **新增** Azure Responses API 支援（GPT-5.x / Codex 系列）
