@@ -46,7 +46,10 @@
 - [ ] 儲存設定後再載入，配置正確保存
 
 ## 驗證原報錯已修復
-- [ ] 原錯誤「由於未提供憑證名稱，所以無法啟動該區」不再出現
+- [ ] 原錯誤「由於未提供憑證名稱，所以無法啟動該區」不再出現（error31）
+- [ ] 原錯誤「HTTP 406 Not Acceptable」不再出現（error32）
+- [ ] DevExpress MCP 服務成功連接（`https://api.devexpress.com/mcp/docs`）
+- [ ] DevExpress 工具列表正確載入（2個工具：search 和 get_content）
 - [ ] HTTP/SSE 連接成功建立
 - [ ] 可正常使用 MCP 工具
 
@@ -65,13 +68,17 @@
 
 ### 最小測試（必要）
 1. Windows 10/11 環境
-2. 至少一個 HTTP MCP 伺服器（可用 Python 快速搭建）
+2. DevExpress MCP 服務（公開可用）：
+   - URL: `https://api.devexpress.com/mcp/docs`
+   - 類型: Http
+   - 無需認證
 
 ### 完整測試（建議）
 1. stdio MCP 伺服器（例如：filesystem, github）
 2. HTTP MCP 伺服器（可信任憑證）
 3. HTTPS MCP 伺服器（自簽憑證）
-4. 測試連接失敗情境（錯誤 URL、超時等）
+4. SSE 格式回應的 MCP 伺服器（如 DevExpress）
+5. 測試連接失敗情境（錯誤 URL、超時等）
 
 ## 簡易 Python HTTP MCP 伺服器範例
 
