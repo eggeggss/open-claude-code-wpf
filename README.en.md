@@ -375,14 +375,17 @@ MIT
 
 ## Changelog
 
-### v0.1.5 (2026-04-18)
+### v0.1.5 (2026-04-19)
 - **Added** MCP HTTP / SSE transport protocol support
   - `MCPClient` now supports HTTP POST JSON-RPC transport (previously stdio only)
   - Automatic SSL certificate validation handling (`ServerCertificateCustomValidationCallback`)
   - Support for HTTP/SSE type MCP server connections (using `SseUrl` as endpoint)
   - HTTP/SSE configuration fields in UI are now fully functional
 - **Fixed** MCP HTTP connection certificate error "Cannot start because certificate name not provided"
+- **Fixed** MCP HTTP 406 error - Added `Accept: application/json, text/event-stream` header
+- **Added** SSE response format parsing (`event: message` + `data: {...}` format)
 - **Refactored** `SendRequestAsync` split into `SendStdioRequestAsync` and `SendHttpRequestAsync`
+- **Tested** Successfully connected to DevExpress MCP documentation search service (`https://api.devexpress.com/mcp/docs`)
 
 ### v0.1.4 (2026-04-17)
 - **Added** Azure Responses API support (GPT-5.x / Codex series)

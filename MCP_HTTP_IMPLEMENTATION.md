@@ -1,16 +1,39 @@
 # MCP HTTP/SSE Transport Implementation
 
 ## 版本
-v0.1.5 (2026-04-18)
+v0.1.5 (2026-04-19)
 
-## 問題
+## 問題歷程
+
+### error31 - SSL 憑證錯誤
 用戶回報 MCP HTTP 連接失敗，錯誤訊息：
 ```
 連接失敗：由於未提供憑證名稱，所以無法啟動該區。
 ```
 
+### error32 - HTTP 406 Not Acceptable
+連接 DevExpress MCP 文件搜尋服務 (`https://api.devexpress.com/mcp/docs`) 時報錯：
+```
+連接失敗：回應狀態碼未表示成功: 406 (Not Acceptable)
+```
+
+伺服器回應：
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "server-error",
+  "error": {
+    "code": -32600,
+    "message": "Not Acceptable: Client must accept both application/json and text/event-stream"
+  }
+}
+```
+
 ## 根本原因
-`MCPClient` 原本只實作了 stdio 傳輸模式（透過 Process 啟動子程序），UI 雖然有 HTTP/SSE 設定欄位，但後端並未實作 HTTP 傳輸功能。
+1. `MCPClient` 原本只實作了 stdio 傳輸模式（透過 Process 啟動子程序）
+2. UI 雖然有 HTTP/SSE 設定欄位，但後端並未實作 HTTP 傳輸功能
+3. HTTP 請求缺少必要的 `Accept` header
+4. 部分 MCP 伺服器回應 SSE 格式（`event: message\ndata: {...}`），需要額外解析
 
 ## 解決方案
 
@@ -70,7 +93,7 @@ private async Task<MCPResponse> SendRequestAsync(string method, JObject @params,
 }
 ```
 
-### 5. HTTP 請求實作
+### 5. HTTP 請求實作（含 Accept header）
 ```csharp
 private async Task<MCPResponse> SendHttpRequestAsync(string method, JObject @params, CancellationToken cancellationToken)
 {
@@ -80,15 +103,56 @@ private async Task<MCPResponse> SendHttpRequestAsync(string method, JObject @par
     var content = new StringContent(json, Encoding.UTF8, "application/json");
 
     var url = Config.SseUrl; // For HTTP, use SseUrl as the endpoint
-    var response = await _httpClient.PostAsync(url, content, cancellationToken);
+    
+    // Create request with proper Accept header for SSE
+    var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+    httpRequest.Content = content;
+    httpRequest.Headers.Add("Accept", "application/json, text/event-stream");
+
+    var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
     response.EnsureSuccessStatusCode();
 
     var responseText = await response.Content.ReadAsStringAsync();
+    
+    // Parse SSE format if present
+    return ParseSseResponse(responseText);
+}
+```
+
+### 6. SSE 回應格式解析
+部分 MCP 伺服器（如 DevExpress）回應 SSE 格式：
+```
+event: message
+data: {"jsonrpc":"2.0","id":1,"result":{...}}
+```
+
+需要解析提取 JSON：
+
+```csharp
+private MCPResponse ParseSseResponse(string responseText)
+{
+    // Check if response is SSE format
+    if (responseText.StartsWith("event:") || responseText.Contains("\ndata:"))
+    {
+        // Extract JSON from SSE format
+        // Format: event: message\ndata: {...}
+        var lines = responseText.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            if (line.StartsWith("data:"))
+            {
+                var jsonData = line.Substring(5).Trim();
+                return JsonConvert.DeserializeObject<MCPResponse>(jsonData);
+            }
+        }
+    }
+    
+    // Otherwise treat as plain JSON
     return JsonConvert.DeserializeObject<MCPResponse>(responseText);
 }
 ```
 
-### 6. 更新 Dispose 邏輯
+### 7. 更新 Dispose 邏輯
 在 `Disconnect()` 和 `Dispose()` 中處理 `HttpClient` 釋放：
 
 ```csharp
@@ -117,7 +181,8 @@ public void Disconnect()
 - 重構 `ConnectAsync` 分支為 stdio/HTTP
 - 新增 `ConnectHttpAsync()` 方法
 - 重構 `SendRequestAsync` 分支為 stdio/HTTP
-- 新增 `SendHttpRequestAsync()` 方法
+- 新增 `SendHttpRequestAsync()` 方法（含 Accept header）
+- 新增 `ParseSseResponse()` 方法（解析 SSE 格式回應）
 - 更新 `Disconnect()` 處理 HttpClient
 
 ### README.md & README.en.md
@@ -129,7 +194,18 @@ public void Disconnect()
 
 ## 使用方式
 
+### DevExpress MCP 文件搜尋服務範例
 在 MCP 設定中：
+1. Server Name: `devexpress`
+2. Server Type: `Http`
+3. URL: `https://api.devexpress.com/mcp/docs`
+4. 儲存並連接
+
+成功連接後會載入兩個工具：
+- `devexpress_docs_search` - 搜尋 DevExpress 文件
+- `devexpress_docs_get_content` - 取得完整文件內容
+
+### 一般 HTTP MCP 伺服器
 1. 選擇類型為 "Http" 或 "Sse"
 2. 在 URL 欄位填入 MCP 伺服器端點，例如：
    ```
@@ -142,7 +218,24 @@ public void Disconnect()
 ### MCP 傳輸協定
 - **Stdio**: JSON-RPC over stdin/stdout (透過子程序)
 - **HTTP**: JSON-RPC over HTTP POST (同步請求/回應)
-- **SSE**: Server-Sent Events (長連接串流，本次實作視為 HTTP)
+- **SSE**: Server-Sent Events (本次實作接受 SSE 格式回應，但請求仍為 HTTP POST)
+
+### HTTP Headers 要求
+部分 MCP 伺服器（如 DevExpress）要求：
+```
+Accept: application/json, text/event-stream
+```
+
+若缺少此 header，會返回 HTTP 406 Not Acceptable。
+
+### SSE 回應格式
+部分伺服器使用 SSE 格式回應：
+```
+event: message
+data: {"jsonrpc":"2.0","id":1,"result":{...}}
+```
+
+`ParseSseResponse()` 方法會自動偵測並提取 JSON。
 
 ### SSL 憑證驗證
 目前實作設定為接受所有憑證（包含自簽憑證），這對於本地開發環境是合理的。若需要正式環境的安全性，應：

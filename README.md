@@ -417,14 +417,17 @@ MIT
 
 ## Changelog
 
-### v0.1.5 (2026-04-18)
+### v0.1.5 (2026-04-19)
 - **新增** MCP HTTP / SSE 傳輸協定支援
   - `MCPClient` 新增 HTTP POST JSON-RPC 傳輸模式（原本僅支援 stdio）
   - 自動處理 SSL 憑證驗證（`ServerCertificateCustomValidationCallback`）
   - 支援 HTTP/SSE 類型的 MCP 伺服器連接（使用 `SseUrl` 作為端點）
   - UI 中的 HTTP/SSE 設定欄位現已完全可用
 - **修正** MCP HTTP 連接時的憑證錯誤「由於未提供憑證名稱，所以無法啟動該區」
+- **修正** MCP HTTP 406 錯誤 - 新增 `Accept: application/json, text/event-stream` header
+- **新增** SSE 回應格式解析（`event: message` + `data: {...}` 格式）
 - **重構** `SendRequestAsync` 分離為 `SendStdioRequestAsync` 和 `SendHttpRequestAsync`
+- **測試** 成功連接 DevExpress MCP 文件搜尋服務（`https://api.devexpress.com/mcp/docs`）
 
 ### v0.1.4 (2026-04-17)
 - **新增** Azure Responses API 支援（GPT-5.x / Codex 系列）

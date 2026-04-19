@@ -200,10 +200,40 @@ namespace OpenClaudeCodeWPF.Services.MCP
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var url = Config.SseUrl; // For HTTP, use SseUrl as the endpoint
-            var response = await _httpClient.PostAsync(url, content, cancellationToken);
+            
+            // Create request with proper Accept header for SSE
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+            httpRequest.Content = content;
+            httpRequest.Headers.Add("Accept", "application/json, text/event-stream");
+
+            var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var responseText = await response.Content.ReadAsStringAsync();
+            
+            // Parse SSE format if present (event: message\ndata: {...})
+            return ParseSseResponse(responseText);
+        }
+
+        private MCPResponse ParseSseResponse(string responseText)
+        {
+            // Check if response is SSE format
+            if (responseText.StartsWith("event:") || responseText.Contains("\ndata:"))
+            {
+                // Extract JSON from SSE format
+                // Format: event: message\ndata: {...}
+                var lines = responseText.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("data:"))
+                    {
+                        var jsonData = line.Substring(5).Trim();
+                        return JsonConvert.DeserializeObject<MCPResponse>(jsonData);
+                    }
+                }
+            }
+            
+            // Otherwise treat as plain JSON
             return JsonConvert.DeserializeObject<MCPResponse>(responseText);
         }
 
