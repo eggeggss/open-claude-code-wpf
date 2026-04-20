@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -12,13 +13,14 @@ using Newtonsoft.Json.Linq;
 
 namespace OpenClaudeCodeWPF.Services.MCP
 {
-    /// <summary>MCP 客戶端 — 支援 stdio 與 HTTP 傳輸</summary>
+    /// <summary>MCP 客戶端 — 支援 stdio 與 HTTP (Streamable HTTP) 傳輸</summary>
     public class MCPClient : IDisposable
     {
         private Process _process;
         private StreamWriter _stdin;
         private StreamReader _stdout;
         private HttpClient _httpClient;
+        private string _mcpSessionId; // Streamable HTTP MCP session ID
         private int _nextId = 1;
         private readonly Dictionary<int, TaskCompletionSource<MCPResponse>> _pending = new Dictionary<int, TaskCompletionSource<MCPResponse>>();
         private Task _readLoop;
@@ -110,7 +112,7 @@ namespace OpenClaudeCodeWPF.Services.MCP
             _httpClient = new HttpClient(handler);
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
 
-            // Initialize
+            // Initialize — server may return Mcp-Session-Id in response headers
             var initResult = await SendRequestAsync("initialize", new JObject
             {
                 ["protocolVersion"] = "2024-11-05",
@@ -120,6 +122,9 @@ namespace OpenClaudeCodeWPF.Services.MCP
 
             if (!initResult.IsSuccess)
                 throw new Exception($"MCP init failed: {initResult.Error?.Message}");
+
+            // Send initialized notification (Streamable HTTP MCP protocol)
+            await SendHttpNotificationAsync("notifications/initialized", null, cancellationToken);
 
             // Fetch tools
             var toolsResult = await SendRequestAsync("tools/list", null, cancellationToken);
@@ -132,6 +137,32 @@ namespace OpenClaudeCodeWPF.Services.MCP
             };
 
             IsConnected = true;
+        }
+
+        /// <summary>Send a JSON-RPC notification over HTTP (no id, no response expected)</summary>
+        private async Task SendHttpNotificationAsync(string method, JObject @params, CancellationToken cancellationToken)
+        {
+            var notification = new JObject
+            {
+                ["jsonrpc"] = "2.0",
+                ["method"] = method
+            };
+            if (@params != null) notification["params"] = @params;
+
+            var json = notification.ToString(Formatting.None);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, Config.SseUrl);
+            httpRequest.Content = content;
+            httpRequest.Headers.Add("Accept", "application/json, text/event-stream");
+
+            if (!string.IsNullOrEmpty(_mcpSessionId))
+            {
+                httpRequest.Headers.Add("Mcp-Session-Id", _mcpSessionId);
+            }
+
+            var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+            // Notifications may return 202 Accepted (no content) — that's fine
         }
 
         public async Task<JObject> CallToolAsync(string toolName, JObject arguments, CancellationToken cancellationToken = default(CancellationToken))
@@ -199,14 +230,27 @@ namespace OpenClaudeCodeWPF.Services.MCP
             var json = JsonConvert.SerializeObject(request);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var url = Config.SseUrl; // For HTTP, use SseUrl as the endpoint
+            var url = Config.SseUrl;
             
-            // Create request with proper Accept header for SSE
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
             httpRequest.Content = content;
             httpRequest.Headers.Add("Accept", "application/json, text/event-stream");
 
+            // Attach Mcp-Session-Id if we have one (Streamable HTTP MCP protocol)
+            if (!string.IsNullOrEmpty(_mcpSessionId))
+            {
+                httpRequest.Headers.Add("Mcp-Session-Id", _mcpSessionId);
+            }
+
             var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+
+            // Capture Mcp-Session-Id from response headers
+            IEnumerable<string> sessionValues;
+            if (response.Headers.TryGetValues("Mcp-Session-Id", out sessionValues))
+            {
+                _mcpSessionId = sessionValues.FirstOrDefault() ?? _mcpSessionId;
+            }
+
             response.EnsureSuccessStatusCode();
 
             var responseText = await response.Content.ReadAsStringAsync();
@@ -282,6 +326,7 @@ namespace OpenClaudeCodeWPF.Services.MCP
         {
             _cts?.Cancel();
             IsConnected = false;
+            _mcpSessionId = null;
 
             if (_httpClient != null)
             {
