@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using OpenClaudeCodeWPF.Services;
 
@@ -60,12 +61,19 @@ namespace OpenClaudeCodeWPF.Utils
             @"((?:[ \t]*(?:using |namespace |class |public |private |protected |static |void |int |string |var |async |await |function |def |import |from |#include |foreach |for\(|if\(|return |Console\.|System\.|Task\.|List<|Dictionary<)[^\n]+\n){4,})",
             RegexOptions.Compiled | RegexOptions.Multiline);
 
+        // Matches image URLs (http/https ending with image extension, or known image CDNs)
+        private static readonly Regex ImageUrlRe = new Regex(
+            @"(https?://\S+?\.(?:png|jpg|jpeg|gif|webp|svg|bmp)(?:\?\S*)?)"
+          + @"|(https?://\S+/(?:img|image|images|afts/img)/\S+)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         // ── Public API ─────────────────────────────────────────────────────────
 
         public static bool HasCodeBlock(string text)
         {
             if (text == null) return false;
             if (text.Contains("```")) return true;
+            if (ImageUrlRe.IsMatch(text)) return true;
             return HeuristicCodeRe.IsMatch(text);
         }
 
@@ -139,7 +147,14 @@ namespace OpenClaudeCodeWPF.Utils
         // ── Prose TextBox ───────────────────────────────────────────────────────
 
         private static UIElement MakeProseBox(string text, double fontSize, FontFamily font)
-            => new TextBox
+        {
+            // Check if text contains image URLs — render them inline
+            if (ImageUrlRe.IsMatch(text))
+            {
+                return MakeProseWithImages(text, fontSize, font);
+            }
+
+            return new TextBox
             {
                 Text = text,
                 Foreground = new SolidColorBrush(ThemeService.Current.TextPrimary),
@@ -156,6 +171,152 @@ namespace OpenClaudeCodeWPF.Utils
                 VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
+        }
+
+        /// <summary>Renders prose that contains image URLs with inline Image controls</summary>
+        private static UIElement MakeProseWithImages(string text, double fontSize, FontFamily font)
+        {
+            var panel = new StackPanel { MaxWidth = 700 };
+            int pos = 0;
+
+            foreach (Match m in ImageUrlRe.Matches(text))
+            {
+                // Text before image URL
+                if (m.Index > pos)
+                {
+                    var before = text.Substring(pos, m.Index - pos).Trim();
+                    if (!string.IsNullOrWhiteSpace(before))
+                    {
+                        panel.Children.Add(new TextBox
+                        {
+                            Text = before,
+                            Foreground = new SolidColorBrush(ThemeService.Current.TextPrimary),
+                            FontSize = fontSize,
+                            FontFamily = font,
+                            Tag = "msg",
+                            TextWrapping = TextWrapping.Wrap,
+                            IsReadOnly = true,
+                            Background = Brushes.Transparent,
+                            BorderThickness = new Thickness(0),
+                            Padding = new Thickness(0, 2, 0, 2),
+                            Cursor = Cursors.IBeam,
+                            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+                        });
+                    }
+                }
+
+                // Image
+                var url = m.Value.TrimEnd('.', ',', ')', ']', '。', '，');
+                panel.Children.Add(MakeImageBlock(url));
+
+                pos = m.Index + m.Length;
+            }
+
+            // Remaining text after last image
+            if (pos < text.Length)
+            {
+                var after = text.Substring(pos).Trim();
+                if (!string.IsNullOrWhiteSpace(after))
+                {
+                    panel.Children.Add(new TextBox
+                    {
+                        Text = after,
+                        Foreground = new SolidColorBrush(ThemeService.Current.TextPrimary),
+                        FontSize = fontSize,
+                        FontFamily = font,
+                        Tag = "msg",
+                        TextWrapping = TextWrapping.Wrap,
+                        IsReadOnly = true,
+                        Background = Brushes.Transparent,
+                        BorderThickness = new Thickness(0),
+                        Padding = new Thickness(0, 2, 0, 2),
+                        Cursor = Cursors.IBeam,
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+                    });
+                }
+            }
+
+            return panel;
+        }
+
+        /// <summary>Creates an Image control that loads from URL with error handling</summary>
+        private static UIElement MakeImageBlock(string url)
+        {
+            var container = new Border
+            {
+                BorderBrush = new SolidColorBrush(C("#454545")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Margin = new Thickness(0, 8, 0, 8),
+                Padding = new Thickness(0),
+                Background = new SolidColorBrush(C("#1E1E1E")),
+                MaxWidth = 680,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            var img = new Image
+            {
+                MaxWidth = 660,
+                MaxHeight = 500,
+                Stretch = System.Windows.Media.Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(4),
+                Cursor = Cursors.Hand
+            };
+
+            // Click to open in browser
+            img.MouseLeftButtonDown += (s, e) =>
+            {
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+                catch { }
+            };
+            img.ToolTip = "點擊在瀏覽器中開啟";
+
+            // Load image asynchronously
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(url, UriKind.Absolute);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                bitmap.EndInit();
+
+                bitmap.DownloadFailed += (s, e) =>
+                {
+                    // On failure, show URL as fallback text
+                    container.Child = new TextBlock
+                    {
+                        Text = $"🖼 {url}",
+                        Foreground = new SolidColorBrush(C("#4FC3F7")),
+                        FontSize = 12,
+                        Padding = new Thickness(8),
+                        TextWrapping = TextWrapping.Wrap,
+                        Cursor = Cursors.Hand
+                    };
+                };
+
+                img.Source = bitmap;
+            }
+            catch
+            {
+                container.Child = new TextBlock
+                {
+                    Text = $"🖼 {url}",
+                    Foreground = new SolidColorBrush(C("#4FC3F7")),
+                    FontSize = 12,
+                    Padding = new Thickness(8),
+                    TextWrapping = TextWrapping.Wrap,
+                    Cursor = Cursors.Hand
+                };
+                return container;
+            }
+
+            container.Child = img;
+            return container;
+        }
 
         // ── Code block panel ────────────────────────────────────────────────────
 
