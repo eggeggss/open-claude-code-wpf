@@ -17,7 +17,7 @@ namespace OpenClaudeCodeWPF.Services.MCP
         [JsonProperty("method")]
         public string Method { get; set; }
 
-        [JsonProperty("params")]
+        [JsonProperty("params", NullValueHandling = NullValueHandling.Ignore)]
         public JObject Params { get; set; }
     }
 

@@ -110,7 +110,7 @@ namespace OpenClaudeCodeWPF.Services.MCP
             handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
             
             _httpClient = new HttpClient(handler);
-            _httpClient.Timeout = TimeSpan.FromSeconds(30);
+            _httpClient.Timeout = TimeSpan.FromSeconds(60);
 
             // Initialize — server may return Mcp-Session-Id in response headers
             var initResult = await SendRequestAsync("initialize", new JObject
