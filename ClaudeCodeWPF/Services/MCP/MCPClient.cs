@@ -225,75 +225,147 @@ namespace OpenClaudeCodeWPF.Services.MCP
 
         private async Task<MCPResponse> SendHttpRequestAsync(string method, JObject @params, CancellationToken cancellationToken)
         {
+            // Try the request; if 404 (session expired), re-initialize and retry once
+            var result = await SendHttpRequestCoreAsync(method, @params, cancellationToken);
+            if (result != null) return result;
+
+            // Session expired — re-initialize
+            await ReinitializeHttpSessionAsync(cancellationToken);
+            result = await SendHttpRequestCoreAsync(method, @params, cancellationToken);
+            if (result != null) return result;
+
+            throw new Exception($"MCP HTTP request failed for {method} after session refresh");
+        }
+
+        private async Task<MCPResponse> SendHttpRequestCoreAsync(string method, JObject @params, CancellationToken cancellationToken)
+        {
             var id = _nextId++;
             var request = new MCPRequest { Method = method, Id = id, Params = @params };
             var json = JsonConvert.SerializeObject(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var url = Config.SseUrl;
-            
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
-            httpRequest.Content = content;
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, Config.SseUrl);
+            httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
             httpRequest.Headers.Add("Accept", "application/json, text/event-stream");
 
-            // Attach Mcp-Session-Id if we have one (Streamable HTTP MCP protocol)
             if (!string.IsNullOrEmpty(_mcpSessionId))
             {
                 httpRequest.Headers.Add("Mcp-Session-Id", _mcpSessionId);
             }
 
-            // Use ResponseHeadersRead so we can start reading the stream immediately
-            // without waiting for the server to close the connection (critical for SSE)
-            var response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-            // Capture Mcp-Session-Id from response headers
-            IEnumerable<string> sessionValues;
-            if (response.Headers.TryGetValues("Mcp-Session-Id", out sessionValues))
+            HttpResponseMessage response = null;
+            try
             {
-                _mcpSessionId = sessionValues.FirstOrDefault() ?? _mcpSessionId;
+                response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+                // Capture Mcp-Session-Id from response headers
+                IEnumerable<string> sessionValues;
+                if (response.Headers.TryGetValues("Mcp-Session-Id", out sessionValues))
+                {
+                    _mcpSessionId = sessionValues.FirstOrDefault() ?? _mcpSessionId;
+                }
+
+                // 404 = session expired, return null to trigger re-init
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                return await ReadResponseAsync(response, cancellationToken);
             }
-
-            response.EnsureSuccessStatusCode();
-
-            // Read response as stream — handles SSE servers that keep connections open
-            return await ReadSseResponseAsync(response, cancellationToken);
+            finally
+            {
+                response?.Dispose();
+            }
         }
 
-        /// <summary>Read SSE/JSON response from stream, returning as soon as we get a complete data line</summary>
-        private async Task<MCPResponse> ReadSseResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+        /// <summary>Read response body, auto-detecting SSE vs plain JSON format</summary>
+        private async Task<MCPResponse> ReadResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
         {
-            using (var stream = await response.Content.ReadAsStreamAsync())
-            using (var reader = new StreamReader(stream, Encoding.UTF8))
+            // Apply a per-read timeout (30s) to avoid hanging forever
+            using (var readCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
-                var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
-                
-                // For SSE (text/event-stream), read line by line
-                if (contentType.Contains("event-stream"))
+                readCts.CancelAfter(TimeSpan.FromSeconds(30));
+
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(stream, Encoding.UTF8))
                 {
-                    while (!cancellationToken.IsCancellationRequested)
+                    var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
+
+                    if (contentType.Contains("event-stream"))
                     {
-                        var line = await reader.ReadLineAsync();
-                        if (line == null) break; // Connection closed
-                        
-                        if (line.StartsWith("data:"))
+                        // SSE: read line-by-line, return on first data: line with JSON
+                        var sb = new StringBuilder();
+                        while (!readCts.Token.IsCancellationRequested)
                         {
-                            var jsonData = line.Substring(5).Trim();
-                            if (!string.IsNullOrEmpty(jsonData))
+                            var line = await reader.ReadLineAsync();
+                            if (line == null) break;
+
+                            if (line.StartsWith("data:"))
                             {
-                                return JsonConvert.DeserializeObject<MCPResponse>(jsonData);
+                                var jsonData = line.Substring(5).Trim();
+                                if (!string.IsNullOrEmpty(jsonData))
+                                {
+                                    return JsonConvert.DeserializeObject<MCPResponse>(jsonData);
+                                }
+                            }
+                            sb.AppendLine(line);
+                        }
+
+                        // Fallback: try to parse all collected text as JSON
+                        var allText = sb.ToString().Trim();
+                        if (!string.IsNullOrEmpty(allText))
+                        {
+                            try { return JsonConvert.DeserializeObject<MCPResponse>(allText); }
+                            catch { }
+                        }
+                        throw new Exception("SSE stream ended without valid data");
+                    }
+                    else
+                    {
+                        // Plain JSON
+                        var responseText = await reader.ReadToEndAsync();
+
+                        // Some servers return SSE format even with application/json content type
+                        if (responseText.Contains("data:"))
+                        {
+                            foreach (var line in responseText.Split('\n'))
+                            {
+                                if (line.StartsWith("data:"))
+                                {
+                                    var jsonData = line.Substring(5).Trim();
+                                    if (!string.IsNullOrEmpty(jsonData))
+                                    {
+                                        try { return JsonConvert.DeserializeObject<MCPResponse>(jsonData); }
+                                        catch { }
+                                    }
+                                }
                             }
                         }
-                        // Skip "event:" lines and empty lines
+
+                        return JsonConvert.DeserializeObject<MCPResponse>(responseText);
                     }
-                    throw new Exception("SSE stream ended without data");
-                }
-                else
-                {
-                    // Plain JSON response — read all at once
-                    var responseText = await reader.ReadToEndAsync();
-                    return JsonConvert.DeserializeObject<MCPResponse>(responseText);
                 }
             }
+        }
+
+        /// <summary>Re-initialize HTTP MCP session (on 404/session expiry)</summary>
+        private async Task ReinitializeHttpSessionAsync(CancellationToken cancellationToken)
+        {
+            _mcpSessionId = null;
+
+            var initResult = await SendHttpRequestCoreAsync("initialize", new JObject
+            {
+                ["protocolVersion"] = "2024-11-05",
+                ["capabilities"] = new JObject { ["tools"] = new JObject() },
+                ["clientInfo"] = new JObject { ["name"] = "ClaudeCodeWPF", ["version"] = "1.0" }
+            }, cancellationToken);
+
+            if (initResult == null || !initResult.IsSuccess)
+                throw new Exception("MCP session re-initialization failed");
+
+            await SendHttpNotificationAsync("notifications/initialized", null, cancellationToken);
         }
 
         private async Task SendNotificationAsync(string method, JObject @params = null)
