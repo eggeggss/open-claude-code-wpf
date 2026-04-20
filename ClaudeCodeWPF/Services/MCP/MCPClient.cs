@@ -242,7 +242,9 @@ namespace OpenClaudeCodeWPF.Services.MCP
                 httpRequest.Headers.Add("Mcp-Session-Id", _mcpSessionId);
             }
 
-            var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+            // Use ResponseHeadersRead so we can start reading the stream immediately
+            // without waiting for the server to close the connection (critical for SSE)
+            var response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
             // Capture Mcp-Session-Id from response headers
             IEnumerable<string> sessionValues;
@@ -253,32 +255,45 @@ namespace OpenClaudeCodeWPF.Services.MCP
 
             response.EnsureSuccessStatusCode();
 
-            var responseText = await response.Content.ReadAsStringAsync();
-            
-            // Parse SSE format if present (event: message\ndata: {...})
-            return ParseSseResponse(responseText);
+            // Read response as stream — handles SSE servers that keep connections open
+            return await ReadSseResponseAsync(response, cancellationToken);
         }
 
-        private MCPResponse ParseSseResponse(string responseText)
+        /// <summary>Read SSE/JSON response from stream, returning as soon as we get a complete data line</summary>
+        private async Task<MCPResponse> ReadSseResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
         {
-            // Check if response is SSE format
-            if (responseText.StartsWith("event:") || responseText.Contains("\ndata:"))
+            using (var stream = await response.Content.ReadAsStreamAsync())
+            using (var reader = new StreamReader(stream, Encoding.UTF8))
             {
-                // Extract JSON from SSE format
-                // Format: event: message\ndata: {...}
-                var lines = responseText.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var line in lines)
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
+                
+                // For SSE (text/event-stream), read line by line
+                if (contentType.Contains("event-stream"))
                 {
-                    if (line.StartsWith("data:"))
+                    while (!cancellationToken.IsCancellationRequested)
                     {
-                        var jsonData = line.Substring(5).Trim();
-                        return JsonConvert.DeserializeObject<MCPResponse>(jsonData);
+                        var line = await reader.ReadLineAsync();
+                        if (line == null) break; // Connection closed
+                        
+                        if (line.StartsWith("data:"))
+                        {
+                            var jsonData = line.Substring(5).Trim();
+                            if (!string.IsNullOrEmpty(jsonData))
+                            {
+                                return JsonConvert.DeserializeObject<MCPResponse>(jsonData);
+                            }
+                        }
+                        // Skip "event:" lines and empty lines
                     }
+                    throw new Exception("SSE stream ended without data");
+                }
+                else
+                {
+                    // Plain JSON response — read all at once
+                    var responseText = await reader.ReadToEndAsync();
+                    return JsonConvert.DeserializeObject<MCPResponse>(responseText);
                 }
             }
-            
-            // Otherwise treat as plain JSON
-            return JsonConvert.DeserializeObject<MCPResponse>(responseText);
         }
 
         private async Task SendNotificationAsync(string method, JObject @params = null)
