@@ -424,7 +424,7 @@ MIT
 ### v0.1.6 (2026-04-28)
 - **新增** 自製技能（Skills）系統
   - 支援三種匯入格式：`.json`（自訂格式）、`.md`（Anthropic SKILL.md 格式）、`.zip`（壓縮包自動解析 SKILL.md）
-  - 技能儲存於 `%AppData%\OpenClaudeCodeWPF\skills\`
+  - 技能儲存於 `%USERPROFILE%\.claude\skills\`，與 Claude Code CLI 共用路徑，SKILL.md 中的 `~/.claude/skills/...` 路徑開箱即用
   - 啟用技能後自動附加至系統提示詞
 - **新增** 多技能同時啟用
   - 可同時啟用多個技能，各技能提示詞以區塊合併

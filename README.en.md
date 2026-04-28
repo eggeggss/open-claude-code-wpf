@@ -383,7 +383,7 @@ MIT
 ### v0.1.6 (2026-04-28)
 - **Added** Custom Skills system
   - Three import formats: `.json` (custom schema), `.md` (Anthropic SKILL.md format), `.zip` (auto-extracts and finds SKILL.md)
-  - Skills stored in `%AppData%\OpenClaudeCodeWPF\skills\`
+  - Skills stored in `%USERPROFILE%\.claude\skills\` — shared with Claude Code CLI; paths like `~/.claude/skills/...` in SKILL.md work out of the box
   - Active skills are automatically appended to the system prompt
 - **Added** Multi-skill simultaneous activation
   - Multiple skills can be active at once; prompts are merged with section headers

@@ -14,16 +14,20 @@ namespace OpenClaudeCodeWPF.Services.Skills
     ///   - .json  — 自訂格式（SkillDefinition JSON）
     ///   - .md    — Anthropic SKILL.md 格式（YAML frontmatter + Markdown body）
     ///   - .zip   — 解壓後自動找 SKILL.md
-    /// 技能儲存於 %AppData%\OpenClaudeCodeWPF\skills\。
+    /// 技能儲存於 %USERPROFILE%\.claude\skills\，與 Claude Code CLI 共用同一路徑。
     /// </summary>
     public class SkillService
     {
         private static SkillService _instance;
         public static SkillService Instance => _instance ?? (_instance = new SkillService());
 
+        /// <summary>
+        /// 與 Claude Code CLI 共用的技能目錄：%USERPROFILE%\.claude\skills\
+        /// 此路徑確保 SKILL.md 中的 ~/.claude/skills/... 路徑開箱即用。
+        /// </summary>
         public static readonly string SkillsDir =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                         "OpenClaudeCodeWPF", "skills");
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                         ".claude", "skills");
 
         private readonly List<SkillDefinition> _skills = new List<SkillDefinition>();
         /// <summary>目前啟用中技能的名稱集合（可多選）</summary>
