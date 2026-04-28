@@ -67,6 +67,15 @@ namespace OpenClaudeCodeWPF.Utils
           + @"|(https?://\S+/(?:img|image|images|afts/img)/\S+)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+        // Matches a GFM markdown table: header row + separator row + 1+ data rows
+        private static readonly Regex TableRe = new Regex(
+            @"(^\|[^\n]+\|\s*\r?\n\|[-:| ]+\|\s*\r?\n(?:\|[^\n]+\|\s*\r?\n?)+)",
+            RegexOptions.Compiled | RegexOptions.Multiline);
+
+        // Detects table separator rows like |---|:---:|---:|
+        private static readonly Regex SeparatorRowRe = new Regex(
+            @"^\|[-:| ]+\|$", RegexOptions.Compiled);
+
         // ── Public API ─────────────────────────────────────────────────────────
 
         public static bool HasCodeBlock(string text)
@@ -74,6 +83,7 @@ namespace OpenClaudeCodeWPF.Utils
             if (text == null) return false;
             if (text.Contains("```")) return true;
             if (ImageUrlRe.IsMatch(text)) return true;
+            if (TableRe.IsMatch(text)) return true;
             return HeuristicCodeRe.IsMatch(text);
         }
 
@@ -146,15 +156,8 @@ namespace OpenClaudeCodeWPF.Utils
 
         // ── Prose TextBox ───────────────────────────────────────────────────────
 
-        private static UIElement MakeProseBox(string text, double fontSize, FontFamily font)
-        {
-            // Check if text contains image URLs — render them inline
-            if (ImageUrlRe.IsMatch(text))
-            {
-                return MakeProseWithImages(text, fontSize, font);
-            }
-
-            return new TextBox
+        private static TextBox MakePlainTextBox(string text, double fontSize, FontFamily font)
+            => new TextBox
             {
                 Text = text,
                 Foreground = new SolidColorBrush(ThemeService.Current.TextPrimary),
@@ -171,71 +174,65 @@ namespace OpenClaudeCodeWPF.Utils
                 VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
+
+        private static UIElement MakeProseBox(string text, double fontSize, FontFamily font)
+        {
+            if (ImageUrlRe.IsMatch(text) || TableRe.IsMatch(text))
+                return MakeProseWithSpecialElements(text, fontSize, font);
+
+            return MakePlainTextBox(text, fontSize, font);
         }
 
-        /// <summary>Renders prose that contains image URLs with inline Image controls</summary>
-        private static UIElement MakeProseWithImages(string text, double fontSize, FontFamily font)
+        /// <summary>Renders prose containing image URLs and/or markdown tables inline</summary>
+        private static UIElement MakeProseWithSpecialElements(string text, double fontSize, FontFamily font)
         {
             var panel = new StackPanel { MaxWidth = 700 };
-            int pos = 0;
 
+            // Collect all special matches (tables + image URLs) ordered by position
+            var allMatches = new List<Match>();
+            var matchTypes = new Dictionary<Match, string>();
+
+            foreach (Match m in TableRe.Matches(text))
+            {
+                allMatches.Add(m);
+                matchTypes[m] = "table";
+            }
             foreach (Match m in ImageUrlRe.Matches(text))
             {
-                // Text before image URL
+                allMatches.Add(m);
+                matchTypes[m] = "image";
+            }
+
+            allMatches.Sort((a, b) => a.Index.CompareTo(b.Index));
+
+            int pos = 0;
+            foreach (var m in allMatches)
+            {
+                if (m.Index < pos) continue; // skip overlapping
+
                 if (m.Index > pos)
                 {
-                    var before = text.Substring(pos, m.Index - pos).Trim();
-                    if (!string.IsNullOrWhiteSpace(before))
-                    {
-                        panel.Children.Add(new TextBox
-                        {
-                            Text = before,
-                            Foreground = new SolidColorBrush(ThemeService.Current.TextPrimary),
-                            FontSize = fontSize,
-                            FontFamily = font,
-                            Tag = "msg",
-                            TextWrapping = TextWrapping.Wrap,
-                            IsReadOnly = true,
-                            Background = Brushes.Transparent,
-                            BorderThickness = new Thickness(0),
-                            Padding = new Thickness(0, 2, 0, 2),
-                            Cursor = Cursors.IBeam,
-                            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
-                        });
-                    }
+                    var chunk = text.Substring(pos, m.Index - pos).Trim('\n', '\r');
+                    if (!string.IsNullOrWhiteSpace(chunk))
+                        panel.Children.Add(MakePlainTextBox(chunk, fontSize, font));
                 }
 
-                // Image
-                var url = m.Value.TrimEnd('.', ',', ')', ']', '。', '，');
-                panel.Children.Add(MakeImageBlock(url));
+                if (matchTypes[m] == "table")
+                    panel.Children.Add(MakeTableBlock(m.Value));
+                else
+                {
+                    var url = m.Value.TrimEnd('.', ',', ')', ']', '。', '，');
+                    panel.Children.Add(MakeImageBlock(url));
+                }
 
                 pos = m.Index + m.Length;
             }
 
-            // Remaining text after last image
             if (pos < text.Length)
             {
-                var after = text.Substring(pos).Trim();
-                if (!string.IsNullOrWhiteSpace(after))
-                {
-                    panel.Children.Add(new TextBox
-                    {
-                        Text = after,
-                        Foreground = new SolidColorBrush(ThemeService.Current.TextPrimary),
-                        FontSize = fontSize,
-                        FontFamily = font,
-                        Tag = "msg",
-                        TextWrapping = TextWrapping.Wrap,
-                        IsReadOnly = true,
-                        Background = Brushes.Transparent,
-                        BorderThickness = new Thickness(0),
-                        Padding = new Thickness(0, 2, 0, 2),
-                        Cursor = Cursors.IBeam,
-                        VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
-                    });
-                }
+                var tail = text.Substring(pos).Trim('\n', '\r');
+                if (!string.IsNullOrWhiteSpace(tail))
+                    panel.Children.Add(MakePlainTextBox(tail, fontSize, font));
             }
 
             return panel;
@@ -316,6 +313,116 @@ namespace OpenClaudeCodeWPF.Utils
 
             container.Child = img;
             return container;
+        }
+
+        // ── Markdown table ──────────────────────────────────────────────────────
+
+        private static UIElement MakeTableBlock(string tableText)
+        {
+            var rawLines = tableText.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = new List<string>();
+            foreach (var l in rawLines)
+            {
+                var t = l.Trim();
+                if (t.StartsWith("|")) lines.Add(t);
+            }
+
+            if (lines.Count < 2)
+                return MakePlainTextBox(tableText, 12, new FontFamily("Segoe UI"));
+
+            var headerCells = ParseCells(lines[0]);
+            int colCount = headerCells.Count;
+            if (colCount == 0)
+                return MakePlainTextBox(tableText, 12, new FontFamily("Segoe UI"));
+
+            // Skip separator row
+            int dataStart = 1;
+            if (dataStart < lines.Count && SeparatorRowRe.IsMatch(lines[dataStart]))
+                dataStart = 2;
+
+            var dataRows = new List<List<string>>();
+            for (int i = dataStart; i < lines.Count; i++)
+            {
+                var cells = ParseCells(lines[i]);
+                if (cells.Count > 0) dataRows.Add(cells);
+            }
+
+            var grid = new Grid();
+            for (int c = 0; c < colCount; c++)
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            int totalRows = 1 + dataRows.Count;
+            for (int r = 0; r < totalRows; r++)
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            // Header row
+            for (int c = 0; c < colCount; c++)
+            {
+                var cellText = c < headerCells.Count ? headerCells[c] : "";
+                var cell = MakeTableCell(cellText, isHeader: true,
+                    isLastCol: c == colCount - 1, isLastRow: dataRows.Count == 0);
+                Grid.SetRow(cell, 0);
+                Grid.SetColumn(cell, c);
+                grid.Children.Add(cell);
+            }
+
+            // Data rows
+            for (int r = 0; r < dataRows.Count; r++)
+            {
+                var row = dataRows[r];
+                bool isLast = r == dataRows.Count - 1;
+                for (int c = 0; c < colCount; c++)
+                {
+                    var cellText = c < row.Count ? row[c] : "";
+                    var cell = MakeTableCell(cellText, isHeader: false,
+                        isLastCol: c == colCount - 1, isLastRow: isLast, evenRow: r % 2 == 0);
+                    Grid.SetRow(cell, r + 1);
+                    Grid.SetColumn(cell, c);
+                    grid.Children.Add(cell);
+                }
+            }
+
+            return new Border
+            {
+                Child = grid,
+                BorderBrush = new SolidColorBrush(C("#454545")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Margin = new Thickness(0, 8, 0, 8),
+                MaxWidth = 700,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                ClipToBounds = true
+            };
+        }
+
+        private static UIElement MakeTableCell(string text, bool isHeader, bool isLastCol, bool isLastRow, bool evenRow = false)
+        {
+            var bgColor = isHeader ? C("#252526") : (evenRow ? C("#1E1E1E") : C("#1A1A1A"));
+            var tb = new TextBlock
+            {
+                Text = text,
+                Foreground = new SolidColorBrush(isHeader ? Colors.White : C("#D4D4D4")),
+                FontWeight = isHeader ? FontWeights.SemiBold : FontWeights.Normal,
+                FontSize = 12,
+                Padding = new Thickness(10, 6, 10, 6),
+                TextWrapping = TextWrapping.Wrap,
+                MinWidth = 60
+            };
+            return new Border
+            {
+                Child = tb,
+                Background = new SolidColorBrush(bgColor),
+                BorderBrush = new SolidColorBrush(C("#454545")),
+                BorderThickness = new Thickness(0, 0, isLastCol ? 0 : 1, isLastRow ? 0 : 1)
+            };
+        }
+
+        private static List<string> ParseCells(string line)
+        {
+            var parts = line.Split('|');
+            var cells = new List<string>();
+            for (int i = 1; i < parts.Length - 1; i++)
+                cells.Add(parts[i].Trim());
+            return cells;
         }
 
         // ── Code block panel ────────────────────────────────────────────────────
