@@ -33,6 +33,14 @@ namespace OpenClaudeCodeWPF.Models
         [JsonIgnore]
         public string FilePath { get; set; }
 
+        /// <summary>執行期：若技能來自目錄（SKILL.md），為 true</summary>
+        [JsonIgnore]
+        public bool IsDirectory { get; set; }
+
+        /// <summary>執行期：目錄型技能的資料夾路徑（用於刪除整個目錄）</summary>
+        [JsonIgnore]
+        public string DirPath { get; set; }
+
         [JsonIgnore]
         public bool IsValid =>
             !string.IsNullOrWhiteSpace(Name) &&

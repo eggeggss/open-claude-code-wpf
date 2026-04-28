@@ -171,7 +171,12 @@ namespace OpenClaudeCodeWPF.Views
                 "刪除技能", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (result == MessageBoxResult.Yes)
-                SkillService.Instance.DeleteSkill(item.Skill);
+            {
+                var error = SkillService.Instance.DeleteSkill(item.Skill);
+                if (error != null)
+                    MessageBox.Show($"❌ 刪除失敗\n\n{error}",
+                        "刪除失敗", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ImportSkillSettings_Click(object sender, RoutedEventArgs e)
@@ -179,7 +184,7 @@ namespace OpenClaudeCodeWPF.Views
             var dlg = new OpenFileDialog
             {
                 Title      = "選擇技能檔案",
-                Filter     = "技能檔案 (*.json)|*.json|所有檔案 (*.*)|*.*",
+                Filter     = "技能檔案 (*.json;*.zip;*.md)|*.json;*.zip;*.md|JSON (*.json)|*.json|ZIP (*.zip)|*.zip|SKILL.md (*.md)|*.md|所有檔案 (*.*)|*.*",
                 DefaultExt = ".json"
             };
 
