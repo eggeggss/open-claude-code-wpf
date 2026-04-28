@@ -625,6 +625,160 @@
                 </Grid>
             </TabItem>
 
+            <!-- ══ Tab 6: 技能 ══ -->
+            <TabItem Header="⚡ 技能">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Skill List -->
+                    <Border Grid.Column="0" BorderBrush="#3E3E42" BorderThickness="0,0,1,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ListBox x:Name="SkillListBox" Grid.Row="0"
+                                     Background="#252526" BorderThickness="0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     SelectionChanged="SkillListBox_SelectionChanged">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="Padding" Value="8,6"/>
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="#CCCCCC"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="#37373D"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#2A2D2E"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Icon}" FontSize="13"
+                                                               VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontWeight="SemiBold" FontSize="12"
+                                                               Foreground="#EEEEEE"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding ShortDescription}"
+                                                           FontSize="10" Foreground="#777777"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Margin="18,2,0,0"/>
+                                            </StackPanel>
+                                            <!-- Active indicator -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <Ellipse Width="8" Height="8"
+                                                         Fill="{Binding ActiveColor}"
+                                                         ToolTip="{Binding ActiveTooltip}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <!-- Bottom buttons -->
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8">
+                                <Button x:Name="ImportSkillSettingsBtn"
+                                        Content="＋ 匯入技能"
+                                        Height="28" Padding="10,0"
+                                        Background="#FF6000" Foreground="White" BorderThickness="0"
+                                        FontSize="12" Click="ImportSkillSettings_Click"
+                                        ToolTip="匯入 .json 技能檔案"/>
+                                <Button x:Name="OpenSkillFolderBtn"
+                                        Content="📁" Width="28" Height="28" Margin="6,0,0,0"
+                                        Background="#3C3C3C" Foreground="#CCCCCC" BorderThickness="0"
+                                        FontSize="13" Click="OpenSkillFolder_Click"
+                                        ToolTip="開啟技能資料夾"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right: Detail Panel -->
+                    <Grid Grid.Column="1">
+                        <!-- Empty state -->
+                        <StackPanel x:Name="SkillDetailEmpty"
+                                    VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="⚡" FontSize="36" HorizontalAlignment="Center"
+                                       Foreground="#333333" Margin="0,0,0,12"/>
+                            <TextBlock Text="選擇一個技能查看詳情" Foreground="#555555"
+                                       FontSize="13" HorizontalAlignment="Center"/>
+                            <TextBlock Text="或點擊「＋ 匯入技能」新增" Foreground="#444444"
+                                       FontSize="11" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        </StackPanel>
+
+                        <!-- Detail content (shown when skill selected) -->
+                        <ScrollViewer x:Name="SkillDetailContent"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Visibility="Collapsed">
+                            <StackPanel Margin="20,12,20,20">
+
+                                <!-- Icon + Name header -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                    <TextBlock x:Name="SkillDetailIcon"
+                                               FontSize="28" VerticalAlignment="Center"
+                                               Margin="0,0,10,0"/>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock x:Name="SkillDetailName"
+                                                   FontSize="16" FontWeight="Bold"
+                                                   Foreground="#FF6000"/>
+                                        <TextBlock x:Name="SkillDetailMeta"
+                                                   FontSize="10" Foreground="#666666"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Description -->
+                                <TextBlock Text="說明" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock x:Name="SkillDetailDesc"
+                                           Foreground="#AAAAAA" FontSize="12"
+                                           TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                                <!-- System Prompt Preview -->
+                                <TextBlock Text="系統提示詞預覽" Style="{StaticResource SectionHeader}"/>
+                                <TextBox x:Name="SkillDetailPromptPreview"
+                                         Style="{StaticResource MultiLineBox}"
+                                         Height="120" IsReadOnly="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         Margin="0,0,0,16"
+                                         TextWrapping="Wrap"/>
+
+                                <!-- Action Buttons -->
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="SkillActivateBtn"
+                                            Width="90" Height="28" Margin="0,0,8,0"
+                                            Foreground="White" BorderThickness="0"
+                                            Click="SkillActivateBtn_Click"/>
+                                    <Button x:Name="SkillDeleteBtn"
+                                            Content="🗑 刪除" Width="80" Height="28"
+                                            Background="#6E3C3C" Foreground="#CCCCCC" BorderThickness="0"
+                                            Click="SkillDeleteBtn_Click"/>
+                                </StackPanel>
+
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+
+                </Grid>
+            </TabItem>
+
         </TabControl>
 
         <!-- Footer Buttons -->
