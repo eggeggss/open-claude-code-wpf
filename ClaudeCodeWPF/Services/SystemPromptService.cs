@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using OpenClaudeCodeWPF.Services.Skills;
 using OpenClaudeCodeWPF.Utils;
 
 namespace OpenClaudeCodeWPF.Services
@@ -84,10 +85,15 @@ namespace OpenClaudeCodeWPF.Services
 
         public string GetSystemPrompt(string language = "zh-TW")
         {
-            if (!string.IsNullOrEmpty(_customPrompt))
-                return _customPrompt;
+            string basePrompt = !string.IsNullOrEmpty(_customPrompt)
+                ? _customPrompt
+                : (language.StartsWith("zh") ? DEFAULT_SYSTEM_PROMPT_ZH : DEFAULT_SYSTEM_PROMPT_EN);
 
-            return language.StartsWith("zh") ? DEFAULT_SYSTEM_PROMPT_ZH : DEFAULT_SYSTEM_PROMPT_EN;
+            var skillPrompt = SkillService.Instance.GetActiveSkillPrompt();
+            if (!string.IsNullOrEmpty(skillPrompt))
+                basePrompt += "\n\n--- 技能增強 ---\n" + skillPrompt;
+
+            return basePrompt;
         }
 
         public void SetCustomPrompt(string prompt)

@@ -83,7 +83,18 @@
                 <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="6,8,6,0"/>
 
                 <!-- Skills Section -->
-                <TextBlock x:Name="SkillsHeader" Style="{StaticResource SectionHeader}" Text="⚡ 技能"/>
+                <DockPanel Margin="8,12,8,4" LastChildFill="True">
+                    <Button x:Name="ImportSkillButton" DockPanel.Dock="Right"
+                            Content="＋ 上傳" Background="Transparent"
+                            BorderThickness="1" BorderBrush="#3C3C3C"
+                            Foreground="#909090" FontSize="10" Padding="6,2"
+                            Cursor="Hand" ToolTip="上傳自訂技能 (.json 格式)"
+                            Click="ImportSkillButton_Click"/>
+                    <TextBlock x:Name="SkillsHeader"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               FontSize="10" FontWeight="Bold" FontFamily="Segoe UI"
+                               VerticalAlignment="Center" Text="⚡ 技能 (0)"/>
+                </DockPanel>
                 <StackPanel x:Name="SkillsPanel"/>
 
             </StackPanel>

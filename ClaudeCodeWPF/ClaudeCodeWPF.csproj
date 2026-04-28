@@ -134,6 +134,7 @@
     <Compile Include="Models\StreamEvent.cs" />
     <Compile Include="Models\ToolDefinition.cs" />
     <Compile Include="Models\ToolResult.cs" />
+    <Compile Include="Models\SkillDefinition.cs" />
     <!-- ViewModels -->
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />
@@ -159,6 +160,7 @@
     <Compile Include="Services\ConversationManager.cs" />
     <Compile Include="Services\HistoryService.cs" />
     <Compile Include="Services\SystemPromptService.cs" />
+    <Compile Include="Services\Skills\SkillService.cs" />
     <Compile Include="Services\DocumentProcessing\DocumentExtractor.cs" />
     <!-- Providers -->
     <Compile Include="Services\Providers\AnthropicProvider.cs" />

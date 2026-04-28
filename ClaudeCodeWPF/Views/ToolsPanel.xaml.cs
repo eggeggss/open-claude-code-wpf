@@ -5,6 +5,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
+using OpenClaudeCodeWPF.Models;
+using OpenClaudeCodeWPF.Services.Skills;
 using OpenClaudeCodeWPF.Services.ToolSystem;
 
 namespace OpenClaudeCodeWPF.Views
@@ -35,6 +38,7 @@ namespace OpenClaudeCodeWPF.Views
         public ToolsPanel()
         {
             InitializeComponent();
+            SkillService.Instance.SkillsChanged += () => Dispatcher.Invoke(Refresh);
             Loaded += (s, e) => Refresh();
         }
 
@@ -53,30 +57,246 @@ namespace OpenClaudeCodeWPF.Views
                 McpToolsPanel.Children.Add(card);
             }
 
-            // ── Skills (future extension point) ──────────────────
-            // For now, derive "skills" from tools that are marked as higher-level.
-            var skillNames = new[] { "Agent", "WebSearch" };
-            var skills = tools.Where(t => skillNames.Contains(t.Name)).ToList();
+            // ── Custom Skills ─────────────────────────────────────
+            var skills = SkillService.Instance.AllSkills;
             SkillsHeader.Text = $"⚡ 技能  ({skills.Count})";
 
             if (skills.Count == 0)
             {
                 SkillsPanel.Children.Add(new TextBlock
                 {
-                    Text = "目前無額外技能",
+                    Text = "尚無自訂技能。\n點擊「＋ 上傳」新增 .json 技能檔案。",
                     Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55)),
-                    FontSize = 11, Margin = new Thickness(12, 4, 8, 4)
+                    FontSize = 11,
+                    Margin = new Thickness(12, 4, 8, 4),
+                    TextWrapping = TextWrapping.Wrap
                 });
             }
             else
             {
-                foreach (var skill in skills.OrderBy(t => t.Name))
-                {
-                    var card = BuildToolCard(skill.Name, skill.Description, isSkill: true);
-                    SkillsPanel.Children.Add(card);
-                }
+                foreach (var skill in skills)
+                    SkillsPanel.Children.Add(BuildSkillCard(skill));
             }
         }
+
+        // ── Skill card ────────────────────────────────────────────────────────
+
+        private Border BuildSkillCard(SkillDefinition skill)
+        {
+            bool isActive = SkillService.Instance.ActiveSkill?.Name == skill.Name;
+
+            var cardBorder = new Border
+            {
+                Background = isActive
+                    ? new SolidColorBrush(Color.FromRgb(0x1A, 0x2A, 0x1A))
+                    : new SolidColorBrush(Color.FromRgb(0x25, 0x25, 0x26)),
+                BorderBrush = isActive
+                    ? new SolidColorBrush(Color.FromRgb(0x40, 0xA0, 0x40))
+                    : new SolidColorBrush(Color.FromRgb(0x3C, 0x3C, 0x3C)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Margin = new Thickness(6, 2, 6, 2),
+                Padding = new Thickness(8, 8, 8, 8)
+            };
+
+            var stack = new StackPanel();
+
+            // Row 1: icon + name + active badge
+            var titleRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+
+            titleRow.Children.Add(new TextBlock
+            {
+                Text = string.IsNullOrEmpty(skill.Icon) ? "⚡" : skill.Icon,
+                FontSize = 14,
+                Margin = new Thickness(0, 0, 6, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            titleRow.Children.Add(new TextBlock
+            {
+                Text = skill.Name,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
+                FontFamily = new FontFamily("Segoe UI"),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            if (!string.IsNullOrEmpty(skill.Version))
+            {
+                titleRow.Children.Add(new TextBlock
+                {
+                    Text = $"v{skill.Version}",
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55)),
+                    FontSize = 9,
+                    Margin = new Thickness(5, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center
+                });
+            }
+
+            if (isActive)
+            {
+                titleRow.Children.Add(new Border
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(0x20, 0x55, 0x20)),
+                    CornerRadius = new CornerRadius(2),
+                    Padding = new Thickness(5, 1, 5, 1),
+                    Margin = new Thickness(7, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = new TextBlock
+                    {
+                        Text = "✓ 啟用中",
+                        Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0xD0, 0x60)),
+                        FontSize = 9,
+                        FontWeight = FontWeights.Bold
+                    }
+                });
+            }
+
+            stack.Children.Add(titleRow);
+
+            // Row 2: description
+            if (!string.IsNullOrWhiteSpace(skill.Description))
+            {
+                var desc = skill.Description.Length > 120
+                    ? skill.Description.Substring(0, 117) + "…"
+                    : skill.Description;
+
+                stack.Children.Add(new TextBlock
+                {
+                    Text = desc,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x77, 0x77, 0x77)),
+                    FontSize = 11,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontFamily = new FontFamily("Segoe UI"),
+                    Margin = new Thickness(0, 0, 0, 6)
+                });
+            }
+
+            // Row 3: action buttons
+            var btnRow = new StackPanel { Orientation = Orientation.Horizontal };
+
+            var toggleBtn = new Button
+            {
+                Content = isActive ? "停用" : "啟用",
+                FontSize = 10,
+                Padding = new Thickness(10, 3, 10, 3),
+                Margin = new Thickness(0, 0, 6, 0),
+                Background = isActive
+                    ? new SolidColorBrush(Color.FromRgb(0x30, 0x60, 0x30))
+                    : new SolidColorBrush(Color.FromRgb(0x1A, 0x4A, 0x7A)),
+                Foreground = Brushes.White,
+                BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand,
+                ToolTip = isActive ? "停用此技能" : "啟用此技能（會附加到系統提示詞）"
+            };
+
+            toggleBtn.Click += (s, e) =>
+            {
+                if (isActive)
+                    SkillService.Instance.DeactivateSkill();
+                else
+                    SkillService.Instance.ActivateSkill(skill);
+                // Refresh is triggered via SkillsChanged event
+            };
+
+            var deleteBtn = new Button
+            {
+                Content = "🗑 刪除",
+                FontSize = 10,
+                Padding = new Thickness(8, 3, 8, 3),
+                Background = Brushes.Transparent,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x90, 0x40, 0x40)),
+                BorderThickness = new Thickness(1),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0x55, 0x30, 0x30)),
+                Cursor = Cursors.Hand,
+                ToolTip = "從磁碟中刪除此技能檔案"
+            };
+
+            deleteBtn.Click += (s, e) =>
+            {
+                var result = MessageBox.Show(
+                    $"確定要刪除技能「{skill.Name}」？\n\n此操作將從磁碟中移除技能檔案，無法復原。",
+                    "刪除技能",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                    SkillService.Instance.DeleteSkill(skill);
+            };
+
+            btnRow.Children.Add(toggleBtn);
+            btnRow.Children.Add(deleteBtn);
+
+            // "在資料夾中顯示" link
+            var openFolderBtn = new Button
+            {
+                Content = "📁",
+                FontSize = 11,
+                Padding = new Thickness(6, 3, 6, 3),
+                Margin = new Thickness(6, 0, 0, 0),
+                Background = Brushes.Transparent,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0x60, 0x60)),
+                BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand,
+                ToolTip = "在檔案總管中顯示技能資料夾"
+            };
+            openFolderBtn.Click += (s, e) =>
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = SkillService.SkillsDir,
+                        UseShellExecute = true
+                    });
+                }
+                catch { }
+            };
+            btnRow.Children.Add(openFolderBtn);
+
+            stack.Children.Add(btnRow);
+            cardBorder.Child = stack;
+            return cardBorder;
+        }
+
+        // ── Upload handler ────────────────────────────────────────────────────
+
+        private void ImportSkillButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "選擇技能檔案",
+                Filter = "技能檔案 (*.json)|*.json|所有檔案 (*.*)|*.*",
+                DefaultExt = ".json"
+            };
+
+            if (dlg.ShowDialog() != true) return;
+
+            var error = SkillService.Instance.ImportSkill(dlg.FileName);
+            if (error == null)
+            {
+                MessageBox.Show(
+                    $"✓ 技能已成功匯入！\n\n技能已儲存至：\n{SkillService.SkillsDir}",
+                    "匯入成功",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show(
+                    $"❌ 匯入失敗\n\n{error}",
+                    "匯入失敗",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        // ── Tool card (existing) ──────────────────────────────────────────────
 
         private Border BuildToolCard(string name, string description, bool isSkill)
         {
@@ -85,7 +305,6 @@ namespace OpenClaudeCodeWPF.Views
             var badgeFg   = (Color)ColorConverter.ConvertFromString(cat[1]);
             var catLabel  = cat[2];
 
-            // Truncate long descriptions
             var shortDesc = description?.Length > 120
                 ? description.Substring(0, 117) + "…"
                 : description ?? "";
@@ -111,7 +330,6 @@ namespace OpenClaudeCodeWPF.Views
 
             var stack = new StackPanel();
 
-            // Row 1: name + badge
             var titleRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 2) };
 
             titleRow.Children.Add(new TextBlock
@@ -140,7 +358,6 @@ namespace OpenClaudeCodeWPF.Views
 
             stack.Children.Add(titleRow);
 
-            // Row 2: description
             stack.Children.Add(new TextBlock
             {
                 Text = shortDesc,
