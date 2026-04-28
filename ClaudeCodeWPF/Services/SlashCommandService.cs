@@ -81,8 +81,9 @@ namespace OpenClaudeCodeWPF.Services
             sb.AppendLine("/export <路徑>     將對話匯出到指定檔案");
             sb.AppendLine("/rename <名稱>     重命名目前對話");
             sb.AppendLine("/skill list        列出所有技能");
-            sb.AppendLine("/skill use <名稱>  啟用指定技能（附加至系統提示詞）");
-            sb.AppendLine("/skill off         停用目前技能");
+            sb.AppendLine("/skill use <名稱>  啟用指定技能（可同時啟用多個）");
+            sb.AppendLine("/skill off <名稱>  停用指定技能");
+            sb.AppendLine("/skill off         停用全部技能");
             sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             sb.AppendLine("快捷鍵：Ctrl+N 新對話 │ Esc 取消生成");
             ShowMessage?.Invoke(sb.ToString(), false, 17, "Comic Sans MS");
@@ -319,7 +320,7 @@ namespace OpenClaudeCodeWPF.Services
                 for (int i = 0; i < skills.Count; i++)
                 {
                     var sk = skills[i];
-                    bool active = svc.ActiveSkill?.Name == sk.Name;
+                    bool active = svc.IsSkillActive(sk);
                     var icon = string.IsNullOrEmpty(sk.Icon) ? "⚡" : sk.Icon;
                     var badge = active ? " ✓ 啟用中" : "";
                     sb.AppendLine($"{icon} {sk.Name}{badge}");
@@ -327,7 +328,7 @@ namespace OpenClaudeCodeWPF.Services
                         sb.AppendLine($"   {sk.Description}");
                 }
                 sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-                sb.AppendLine("用法：/skill use <名稱>  啟用 │  /skill off  停用");
+                sb.AppendLine("用法：/skill use <名稱>  啟用 │  /skill off <名稱>  停用 │  /skill off  停用全部");
                 Msg(sb.ToString());
                 return;
             }
@@ -340,15 +341,11 @@ namespace OpenClaudeCodeWPF.Services
                     return;
                 }
 
-                var skills = svc.AllSkills;
                 SkillDefinition found = null;
-                for (int i = 0; i < skills.Count; i++)
+                foreach (var sk in svc.AllSkills)
                 {
-                    if (string.Equals(skills[i].Name, param, StringComparison.OrdinalIgnoreCase))
-                    {
-                        found = skills[i];
-                        break;
-                    }
+                    if (string.Equals(sk.Name, param, StringComparison.OrdinalIgnoreCase))
+                    { found = sk; break; }
                 }
 
                 if (found == null)
@@ -365,18 +362,42 @@ namespace OpenClaudeCodeWPF.Services
 
             if (sub == "off" || sub == "deactivate" || sub == "disable")
             {
-                if (svc.ActiveSkill == null)
+                // /skill off <name> → deactivate specific
+                if (!string.IsNullOrEmpty(param))
+                {
+                    SkillDefinition found = null;
+                    foreach (var sk in svc.AllSkills)
+                    {
+                        if (string.Equals(sk.Name, param, StringComparison.OrdinalIgnoreCase))
+                        { found = sk; break; }
+                    }
+                    if (found == null)
+                    {
+                        Msg($"❌ 找不到技能「{param}」，輸入 /skill list 查看可用技能。", true);
+                        return;
+                    }
+                    if (!svc.IsSkillActive(found))
+                    {
+                        Msg($"技能「{found.Name}」目前並未啟用。");
+                        return;
+                    }
+                    svc.DeactivateSkill(found);
+                    Msg($"✓ 已停用技能：{found.Name}");
+                    return;
+                }
+
+                // /skill off → deactivate all
+                if (!svc.HasActiveSkill)
                 {
                     Msg("目前沒有啟用中的技能。");
                     return;
                 }
-                var name = svc.ActiveSkill.Name;
-                svc.DeactivateSkill();
-                Msg($"✓ 已停用技能：{name}");
+                svc.DeactivateAll();
+                Msg("✓ 已停用全部技能");
                 return;
             }
 
-            Msg($"❌ 未知的 skill 子指令：{sub}\n用法：/skill list │ /skill use <名稱> │ /skill off", true);
+            Msg($"❌ 未知的 skill 子指令：{sub}\n用法：/skill list │ /skill use <名稱> │ /skill off [名稱]", true);
         }
     }
 }

@@ -83,7 +83,7 @@ namespace OpenClaudeCodeWPF.Views
 
         private Border BuildSkillCard(SkillDefinition skill)
         {
-            bool isActive = SkillService.Instance.ActiveSkill?.Name == skill.Name;
+            bool isActive = SkillService.Instance.IsSkillActive(skill);
 
             var cardBorder = new Border
             {
@@ -197,8 +197,8 @@ namespace OpenClaudeCodeWPF.Views
 
             toggleBtn.Click += (s, e) =>
             {
-                if (isActive)
-                    SkillService.Instance.DeactivateSkill();
+                if (SkillService.Instance.IsSkillActive(skill))
+                    SkillService.Instance.DeactivateSkill(skill);
                 else
                     SkillService.Instance.ActivateSkill(skill);
                 // Refresh is triggered via SkillsChanged event

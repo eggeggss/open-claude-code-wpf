@@ -26,10 +26,21 @@ namespace OpenClaudeCodeWPF.Services.Skills
                          "OpenClaudeCodeWPF", "skills");
 
         private readonly List<SkillDefinition> _skills = new List<SkillDefinition>();
+        /// <summary>目前啟用中技能的名稱集合（可多選）</summary>
+        private readonly HashSet<string> _activeSkillNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public IReadOnlyList<SkillDefinition> AllSkills => _skills.AsReadOnly();
 
-        public SkillDefinition ActiveSkill { get; private set; }
+        /// <summary>目前所有啟用中的技能</summary>
+        public IReadOnlyList<SkillDefinition> ActiveSkills =>
+            _skills.FindAll(s => _activeSkillNames.Contains(s.Name)).AsReadOnly();
+
+        /// <summary>是否有任何技能啟用中</summary>
+        public bool HasActiveSkill => _activeSkillNames.Count > 0;
+
+        /// <summary>判斷指定技能是否啟用中</summary>
+        public bool IsSkillActive(SkillDefinition skill) =>
+            skill != null && _activeSkillNames.Contains(skill.Name);
 
         /// <summary>技能清單或啟用狀態變更時觸發</summary>
         public event Action SkillsChanged;
@@ -85,9 +96,8 @@ namespace OpenClaudeCodeWPF.Services.Skills
             }
             catch { }
 
-            // 若啟用中的技能已被刪除，清除它
-            if (ActiveSkill != null && !_skills.Exists(s => s.Name == ActiveSkill.Name))
-                ActiveSkill = null;
+            // 若啟用中有技能已被刪除，從集合中移除
+            _activeSkillNames.RemoveWhere(name => !_skills.Exists(s => s.Name == name));
 
             SkillsChanged?.Invoke();
         }
@@ -238,8 +248,7 @@ namespace OpenClaudeCodeWPF.Services.Skills
             }
 
             // 即使刪除失敗，也先清除啟用狀態，再重新掃描磁碟
-            if (ActiveSkill?.Name == skill.Name)
-                ActiveSkill = null;
+            _activeSkillNames.Remove(skill.Name);
 
             LoadSkills(); // 重新掃描，若刪除失敗技能會再次出現
             return error;
@@ -247,20 +256,45 @@ namespace OpenClaudeCodeWPF.Services.Skills
 
         // ── 啟用 / 停用 ──────────────────────────────────────────────────────
 
+        /// <summary>啟用指定技能（加入啟用集合）</summary>
         public void ActivateSkill(SkillDefinition skill)
         {
-            ActiveSkill = skill;
+            if (skill == null) return;
+            _activeSkillNames.Add(skill.Name);
             SkillsChanged?.Invoke();
         }
 
-        public void DeactivateSkill()
+        /// <summary>停用指定技能（從啟用集合移除）</summary>
+        public void DeactivateSkill(SkillDefinition skill)
         {
-            ActiveSkill = null;
+            if (skill == null) return;
+            _activeSkillNames.Remove(skill.Name);
             SkillsChanged?.Invoke();
         }
 
-        /// <summary>取得目前啟用技能的系統提示詞，無技能時回傳 null</summary>
-        public string GetActiveSkillPrompt() => ActiveSkill?.SystemPrompt;
+        /// <summary>停用所有技能</summary>
+        public void DeactivateAll()
+        {
+            _activeSkillNames.Clear();
+            SkillsChanged?.Invoke();
+        }
+
+        /// <summary>取得所有啟用技能的系統提示詞，以分隔線合併；無技能時回傳 null</summary>
+        public string GetActiveSkillPrompt()
+        {
+            var active = ActiveSkills;
+            if (active.Count == 0) return null;
+
+            var sb = new StringBuilder();
+            foreach (var skill in active)
+            {
+                if (sb.Length > 0)
+                    sb.AppendLine("\n---");
+                sb.AppendLine($"### 技能：{skill.Name}");
+                sb.Append(skill.SystemPrompt);
+            }
+            return sb.ToString();
+        }
 
         // ── SKILL.md 解析 ─────────────────────────────────────────────────────
 

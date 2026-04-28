@@ -88,7 +88,7 @@ namespace OpenClaudeCodeWPF.Views
                     ShortDescription = skill.Description?.Length > 60
                                        ? skill.Description.Substring(0, 57) + "…"
                                        : skill.Description ?? "",
-                    IsActive = SkillService.Instance.ActiveSkill?.Name == skill.Name
+                    IsActive = SkillService.Instance.IsSkillActive(skill)
                 };
                 SkillListBox.Items.Add(item);
 
@@ -119,7 +119,7 @@ namespace OpenClaudeCodeWPF.Views
             SkillDetailEmpty.Visibility   = Visibility.Collapsed;
             SkillDetailContent.Visibility = Visibility.Visible;
 
-            bool isActive = SkillService.Instance.ActiveSkill?.Name == skill.Name;
+            bool isActive = SkillService.Instance.IsSkillActive(skill);
 
             SkillDetailIcon.Text  = string.IsNullOrEmpty(skill.Icon) ? "⚡" : skill.Icon;
             SkillDetailName.Text  = skill.Name;
@@ -153,9 +153,9 @@ namespace OpenClaudeCodeWPF.Views
             var item = SkillListBox.SelectedItem as SkillItem;
             if (item == null) return;
 
-            bool isActive = SkillService.Instance.ActiveSkill?.Name == item.Skill.Name;
+            bool isActive = SkillService.Instance.IsSkillActive(item.Skill);
             if (isActive)
-                SkillService.Instance.DeactivateSkill();
+                SkillService.Instance.DeactivateSkill(item.Skill);
             else
                 SkillService.Instance.ActivateSkill(item.Skill);
             // RefreshSkillList triggered by SkillsChanged event

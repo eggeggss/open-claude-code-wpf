@@ -86,25 +86,75 @@ namespace OpenClaudeCodeWPF.Views
             InputBox.FontFamily = _msgFontFamily;
         }
 
-        // ── Skill badge ───────────────────────────────────────────────────────
+        // ── Skill badges ──────────────────────────────────────────────────────
 
         private void UpdateSkillBadge()
         {
-            var skill = SkillService.Instance.ActiveSkill;
-            if (skill == null)
+            SkillBadgesPanel.Children.Clear();
+            var active = SkillService.Instance.ActiveSkills;
+
+            if (active.Count == 0)
             {
                 SkillBadge.Visibility = Visibility.Collapsed;
                 return;
             }
 
-            SkillBadgeIcon.Text = string.IsNullOrEmpty(skill.Icon) ? "⚡" : skill.Icon;
-            SkillBadgeName.Text = skill.Name;
+            foreach (var skill in active)
+                SkillBadgesPanel.Children.Add(BuildSkillPill(skill));
+
             SkillBadge.Visibility = Visibility.Visible;
         }
 
-        private void SkillBadgeDeactivate_Click(object sender, RoutedEventArgs e)
+        private static Border BuildSkillPill(SkillDefinition skill)
         {
-            SkillService.Instance.DeactivateSkill();
+            var pill = new Border
+            {
+                Background      = new SolidColorBrush(Color.FromRgb(0x1A, 0x2A, 0x1A)),
+                BorderBrush     = new SolidColorBrush(Color.FromRgb(0x40, 0xA0, 0x40)),
+                BorderThickness = new Thickness(1),
+                CornerRadius    = new CornerRadius(3),
+                Padding         = new Thickness(7, 3, 5, 3),
+                Margin          = new Thickness(0, 0, 5, 0),
+                ToolTip         = skill.Description
+            };
+
+            var sp = new StackPanel { Orientation = Orientation.Horizontal };
+
+            sp.Children.Add(new TextBlock
+            {
+                Text              = string.IsNullOrEmpty(skill.Icon) ? "⚡" : skill.Icon,
+                FontSize          = 11,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin            = new Thickness(0, 0, 3, 0)
+            });
+
+            sp.Children.Add(new TextBlock
+            {
+                Text              = skill.Name,
+                Foreground        = new SolidColorBrush(Color.FromRgb(0x90, 0xE0, 0x90)),
+                FontSize          = 11,
+                FontWeight        = FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            var closeBtn = new Button
+            {
+                Content         = "✕",
+                Background      = Brushes.Transparent,
+                Foreground      = new SolidColorBrush(Color.FromRgb(0x50, 0x70, 0x50)),
+                BorderThickness = new Thickness(0),
+                FontSize        = 9,
+                Padding         = new Thickness(5, 0, 0, 0),
+                Cursor          = Cursors.Hand,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip         = $"停用 {skill.Name}"
+            };
+            var captured = skill;
+            closeBtn.Click += (s, e) => SkillService.Instance.DeactivateSkill(captured);
+            sp.Children.Add(closeBtn);
+
+            pill.Child = sp;
+            return pill;
         }
 
         public void LoadSession(ConversationSession session)
