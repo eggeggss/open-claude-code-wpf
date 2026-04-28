@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 using OpenClaudeCodeWPF.Models;
 using OpenClaudeCodeWPF.Services;
+using OpenClaudeCodeWPF.Services.Skills;
 using OpenClaudeCodeWPF.Utils;
 using OpenClaudeCodeWPF.ViewModels;
 
@@ -71,13 +72,39 @@ namespace OpenClaudeCodeWPF.Views
 
             _msgFontSize   = ConfigService.Instance.ChatFontSize;
             _msgFontFamily = new FontFamily(ConfigService.Instance.ChatFontFamily);
-            Loaded += (s, e) => ApplyInputBoxFont();
+            Loaded += (s, e) =>
+            {
+                ApplyInputBoxFont();
+                UpdateSkillBadge();
+            };
+            SkillService.Instance.SkillsChanged += () => Dispatcher.Invoke(UpdateSkillBadge);
         }
 
         private void ApplyInputBoxFont()
         {
             InputBox.FontSize   = _msgFontSize;
             InputBox.FontFamily = _msgFontFamily;
+        }
+
+        // ── Skill badge ───────────────────────────────────────────────────────
+
+        private void UpdateSkillBadge()
+        {
+            var skill = SkillService.Instance.ActiveSkill;
+            if (skill == null)
+            {
+                SkillBadge.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            SkillBadgeIcon.Text = string.IsNullOrEmpty(skill.Icon) ? "⚡" : skill.Icon;
+            SkillBadgeName.Text = skill.Name;
+            SkillBadge.Visibility = Visibility.Visible;
+        }
+
+        private void SkillBadgeDeactivate_Click(object sender, RoutedEventArgs e)
+        {
+            SkillService.Instance.DeactivateSkill();
         }
 
         public void LoadSession(ConversationSession session)
