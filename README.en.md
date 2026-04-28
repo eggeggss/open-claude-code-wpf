@@ -7,6 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
+![Version](https://img.shields.io/badge/version-0.1.6-orange)
 
 ---
 
@@ -58,6 +59,8 @@ Summarise the key points from this website:
 - **Streaming responses** — real-time token-by-token output
 - **Extended thinking** — displays the model's reasoning process in a collapsible panel (for Claude / o1 / o3 series)
 - **Tool / Function Calling** — shows tool invocations inline during generation
+- **MCP tool integration** — supports stdio / HTTP / SSE transports to connect external MCP servers
+- **Custom Skills** — import JSON / ZIP / SKILL.md format skills; activate multiple skills simultaneously
 - **Conversation history** — sessions persisted locally, searchable sidebar
 - **Themes** — Light, Dark, Cloude Code (custom orange-accent dark theme)
 - **Markdown rendering** — code blocks with syntax highlighting
@@ -180,14 +183,16 @@ msbuild ClaudeCodeWPF.Installer\ClaudeCodeWPF.Installer.wixproj /p:Configuration
 
 ## Settings
 
-Open the **設定** button in the toolbar. Settings are organised into four tabs:
+Open the **Settings** button in the toolbar. Settings are organised into six tabs:
 
 | Tab | Contents |
 |---|---|
-| 🔑 供應商 API | Per-provider API keys, base URLs, Ollama model list, Azure multi-node |
-| ⚙️ 模型參數 | Temperature, Max Tokens, streaming toggle, language |
-| 🎨 介面 | Theme selector, font family, font size |
-| 📝 系統提示 | Custom system prompt |
+| 🔑 Provider API | Per-provider API keys, base URLs, Ollama model list, Azure multi-node |
+| ⚙️ Model Params | Temperature, Max Tokens, streaming toggle, language |
+| 🎨 UI | Theme selector, font family, font size |
+| 📝 System Prompt | Custom system prompt |
+| 🔌 MCP Servers | MCP tool server connections (stdio / HTTP / SSE) |
+| ⚡ Skills | Import and manage custom skills (JSON / ZIP / SKILL.md); activate multiple simultaneously |
 
 Settings are auto-saved to `%APPDATA%\OpenClaudeCodeWPF\usersettings.json`.
 
@@ -374,6 +379,20 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.6 (2026-04-28)
+- **Added** Custom Skills system
+  - Three import formats: `.json` (custom schema), `.md` (Anthropic SKILL.md format), `.zip` (auto-extracts and finds SKILL.md)
+  - Skills stored in `%AppData%\OpenClaudeCodeWPF\skills\`
+  - Active skills are automatically appended to the system prompt
+- **Added** Multi-skill simultaneous activation
+  - Multiple skills can be active at once; prompts are merged with section headers
+  - Individual pill badges shown above the input box; each has its own ✕ to deactivate
+  - `/skill use <name>` stacks skills; `/skill off <name>` deactivates one; `/skill off` deactivates all
+- **Added** ⚡ Skills tab in Settings panel
+  - Centralised skill list, detail view, activate/deactivate, delete, and import
+- **Fixed** Delete skill now shows an error dialog on failure (previously failed silently)
+- **Fixed** `SkillService.cs` duplicate class definition causing CS0101 build error
 
 ### v0.1.5 (2026-04-19)
 - **Added** MCP HTTP / SSE transport protocol support

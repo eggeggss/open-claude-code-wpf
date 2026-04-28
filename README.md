@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.5-orange)
+![Version](https://img.shields.io/badge/version-0.1.6-orange)
 
 ---
 
@@ -58,6 +58,8 @@
 - **串流輸出** — 即時逐 token 顯示回覆
 - **延伸思考** — 可折疊的思考過程面板（支援 Claude / o1 / o3 系列）
 - **工具呼叫（Function Calling）** — 生成過程中即時顯示工具調用
+- **MCP 工具整合** — 支援 stdio / HTTP / SSE 傳輸協定，可連接外部 MCP 伺服器
+- **自製技能（Skills）** — 匯入 JSON / ZIP / SKILL.md 格式技能，可同時啟用多個
 - **對話歷史** — 本地持久化儲存，側邊欄可搜尋
 - **主題切換** — 亮色、暗色、Cloude Code（橘色強調深色主題）
 - **Markdown 渲染** — 含語法高亮的程式碼區塊
@@ -180,7 +182,7 @@ msbuild ClaudeCodeWPF.Installer\ClaudeCodeWPF.Installer.wixproj /p:Configuration
 
 ## 設定說明
 
-點擊工具列的 **設定** 按鈕，設定分為四個分頁：
+點擊工具列的 **設定** 按鈕，設定分為六個分頁：
 
 | 分頁 | 內容 |
 |---|---|
@@ -188,6 +190,8 @@ msbuild ClaudeCodeWPF.Installer\ClaudeCodeWPF.Installer.wixproj /p:Configuration
 | ⚙️ 模型參數 | Temperature、Max Tokens、串流開關、語言 |
 | 🎨 介面 | 主題切換、字型、字型大小 |
 | 📝 系統提示 | 自訂 System Prompt |
+| 🔌 MCP 伺服器 | MCP 工具伺服器連線（stdio / HTTP / SSE） |
+| ⚡ 技能 | 匯入與管理自製技能（JSON / ZIP / SKILL.md），可同時啟用多個 |
 
 設定自動儲存至 `%APPDATA%\OpenClaudeCodeWPF\usersettings.json`。
 
@@ -416,6 +420,20 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.6 (2026-04-28)
+- **新增** 自製技能（Skills）系統
+  - 支援三種匯入格式：`.json`（自訂格式）、`.md`（Anthropic SKILL.md 格式）、`.zip`（壓縮包自動解析 SKILL.md）
+  - 技能儲存於 `%AppData%\OpenClaudeCodeWPF\skills\`
+  - 啟用技能後自動附加至系統提示詞
+- **新增** 多技能同時啟用
+  - 可同時啟用多個技能，各技能提示詞以區塊合併
+  - 輸入框上方顯示啟用中技能的 pill 標籤，各自有 ✕ 可單獨停用
+  - `/skill use <名稱>` 可疊加啟用；`/skill off <名稱>` 停用指定技能；`/skill off` 停用全部
+- **新增** 設定面板 ⚡ 技能分頁
+  - 技能清單、詳細資訊、啟用/停用、刪除、匯入按鈕集中於設定介面
+- **修正** 刪除技能失敗時顯示錯誤訊息（原本靜默略過）
+- **修正** `SkillService.cs` 重複類別定義造成 CS0101 建置錯誤
 
 ### v0.1.5 (2026-04-19)
 - **新增** MCP HTTP / SSE 傳輸協定支援
