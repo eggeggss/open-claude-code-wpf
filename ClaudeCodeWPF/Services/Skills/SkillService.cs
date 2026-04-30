@@ -252,6 +252,18 @@ namespace OpenClaudeCodeWPF.Services.Skills
                     }
                 }
 
+                // Flatten if the ZIP contained a single top-level folder (e.g. bto-sql-navigator/...)
+                var topDirs  = Directory.GetDirectories(destDir);
+                var topFiles = Directory.GetFiles(destDir);
+                if (topDirs.Length == 1 && topFiles.Length == 0)
+                {
+                    var inner   = topDirs[0];
+                    var tmpDir  = destDir + "__flatten_tmp__";
+                    Directory.Move(inner, tmpDir);
+                    Directory.Delete(destDir, recursive: true);
+                    Directory.Move(tmpDir, destDir);
+                }
+
                 var mdPath = FindSkillMd(destDir);
                 if (mdPath == null)
                 {

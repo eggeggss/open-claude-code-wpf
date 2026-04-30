@@ -15,7 +15,10 @@ namespace OpenClaudeCodeWPF.Services.DocumentProcessing
     {
         private static readonly HashSet<string> TextExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            ".txt", ".md", ".csv", ".log", ".json", ".xml"
+            ".txt", ".md", ".csv", ".log", ".json", ".xml",
+            ".sql", ".cs", ".ts", ".js", ".py", ".rb", ".go", ".java", ".cpp", ".c", ".h",
+            ".yaml", ".yml", ".toml", ".ini", ".cfg", ".env",
+            ".sh", ".bat", ".ps1", ".html", ".css", ".scss"
         };
 
         // ── Public API ────────────────────────────────────────────────────
