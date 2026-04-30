@@ -60,3 +60,5 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
         }
 
         private static string ResolvePath(string path) => PathHelper.Resolve(path);
+    }
+}
