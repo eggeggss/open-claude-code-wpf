@@ -49,9 +49,57 @@ namespace OpenClaudeCodeWPF.Services.Skills
         /// <summary>技能清單或啟用狀態變更時觸發</summary>
         public event Action SkillsChanged;
 
+        /// <summary>
+        /// v0.1.5 以前技能存放在此舊路徑；升級後自動遷移至 SkillsDir。
+        /// </summary>
+        private static readonly string LegacySkillsDir =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                         "OpenClaudeCodeWPF", "skills");
+
         private SkillService()
         {
+            MigrateFromLegacyPath();
             LoadSkills();
+        }
+
+        // ── 舊路徑遷移 ────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 若舊路徑（%AppData%\OpenClaudeCodeWPF\skills\）存在技能且尚未遷移，
+        /// 則將所有檔案與子目錄移至新路徑（%USERPROFILE%\.claude\skills\）。
+        /// 以 migrated.flag 標記已完成，避免重複執行。
+        /// </summary>
+        private static void MigrateFromLegacyPath()
+        {
+            try
+            {
+                if (!Directory.Exists(LegacySkillsDir)) return;
+
+                var flagFile = Path.Combine(LegacySkillsDir, "migrated.flag");
+                if (File.Exists(flagFile)) return;
+
+                Directory.CreateDirectory(SkillsDir);
+
+                // 移動 JSON 技能檔
+                foreach (var file in Directory.GetFiles(LegacySkillsDir))
+                {
+                    var dest = Path.Combine(SkillsDir, Path.GetFileName(file));
+                    if (!File.Exists(dest))
+                        File.Move(file, dest);
+                }
+
+                // 移動子目錄（SKILL.md 技能）
+                foreach (var dir in Directory.GetDirectories(LegacySkillsDir))
+                {
+                    var dest = Path.Combine(SkillsDir, Path.GetFileName(dir));
+                    if (!Directory.Exists(dest))
+                        Directory.Move(dir, dest);
+                }
+
+                // 寫入完成標記，避免重複遷移
+                File.WriteAllText(flagFile, DateTime.Now.ToString("o"));
+            }
+            catch { /* 遷移失敗不影響正常功能 */ }
         }
 
         // ── 載入 ─────────────────────────────────────────────────────────────

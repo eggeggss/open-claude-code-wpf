@@ -639,6 +639,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <ListBox x:Name="SkillListBox" Grid.Row="0"
@@ -694,8 +695,17 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
 
+                            <!-- Skills directory path hint -->
+                            <TextBlock x:Name="SkillsDirHint"
+                                       Grid.Row="1"
+                                       Margin="8,6,8,2"
+                                       FontSize="10" Foreground="#666666"
+                                       TextTrimming="CharacterEllipsis"
+                                       Cursor="Hand"
+                                       MouseLeftButtonUp="SkillsDirHint_Click"/>
+
                             <!-- Bottom buttons -->
-                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8">
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="8,0,8,8">
                                 <Button x:Name="ImportSkillSettingsBtn"
                                         Content="＋ 匯入技能"
                                         Height="28" Padding="10,0"

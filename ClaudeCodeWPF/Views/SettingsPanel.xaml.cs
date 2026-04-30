@@ -21,7 +21,13 @@ namespace OpenClaudeCodeWPF.Views
 
             HighlightActiveThemeButton(_vm.CurrentTheme);
             SkillService.Instance.SkillsChanged += () => Dispatcher.Invoke(RefreshSkillList);
-            Loaded += (s, e) => RefreshSkillList();
+            Loaded += (s, e) =>
+            {
+                RefreshSkillList();
+                var path = SkillService.SkillsDir;
+                SkillsDirHint.Text = "📂 " + path;
+                SkillsDirHint.ToolTip = path;
+            };
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -208,6 +214,7 @@ namespace OpenClaudeCodeWPF.Views
         {
             try
             {
+                System.IO.Directory.CreateDirectory(SkillService.SkillsDir);
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = SkillService.SkillsDir,
@@ -215,6 +222,11 @@ namespace OpenClaudeCodeWPF.Views
                 });
             }
             catch { }
+        }
+
+        private void SkillsDirHint_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            OpenSkillFolder_Click(sender, null);
         }
     }
 }
