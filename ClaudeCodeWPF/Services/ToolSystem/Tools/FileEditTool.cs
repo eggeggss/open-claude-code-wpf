@@ -43,24 +43,37 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
             {
                 var original = await Task.Run(() => File.ReadAllText(path), cancellationToken);
 
-                if (!original.Contains(oldStr))
+                // Normalize old_string line endings to match the file's actual line endings
+                // (model sends \n from JSON; files may use \r\n on Windows)
+                var fileHasCrlf = original.Contains("\r\n");
+                var normalizedOld = NormalizeLineEndings(oldStr, fileHasCrlf);
+                var normalizedNew = NormalizeLineEndings(newStr, fileHasCrlf);
+
+                if (!original.Contains(normalizedOld))
                     return ToolResult.Failure($"old_string not found in file. Make sure it matches exactly.");
 
-                var count = CountOccurrences(original, oldStr);
+                var count = CountOccurrences(original, normalizedOld);
                 if (count > 1)
                     return ToolResult.Failure($"old_string found {count} times. It must be unique. Add more context to make it unique.");
 
-                var updated = original.Replace(oldStr, newStr);
+                var updated = original.Replace(normalizedOld, normalizedNew);
 
                 await Task.Run(() => File.WriteAllText(path, updated), cancellationToken);
 
-                return ToolResult.Success($"Successfully edited {path}\n\nReplaced:\n{oldStr}\n\nWith:\n{newStr}");
+                return ToolResult.Success($"Successfully edited {path}\n\nReplaced:\n{normalizedOld}\n\nWith:\n{normalizedNew}");
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 return ToolResult.Failure(ex.Message);
             }
+        }
+
+        private static string NormalizeLineEndings(string text, bool toCrlf)
+        {
+            // Normalize to LF first, then convert if needed
+            var lf = text.Replace("\r\n", "\n").Replace("\r", "\n");
+            return toCrlf ? lf.Replace("\n", "\r\n") : lf;
         }
 
         private int CountOccurrences(string text, string pattern)

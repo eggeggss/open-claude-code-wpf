@@ -12,7 +12,10 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
     public class BashTool : IToolExecutor
     {
         public string Name => "Bash";
-        public string Description => "Execute a bash/shell command in the current working directory. Returns stdout and stderr combined. For long-running commands, consider a timeout.";
+        public string Description => "Execute a Windows cmd.exe command. Returns stdout and stderr combined. " +
+            "IMPORTANT: This runs cmd.exe on Windows — heredoc syntax (<<EOF, <<'PY') is NOT supported. " +
+            "For multi-line scripts, use the PowerShell tool instead. " +
+            "For Python scripts, write to a temp file first or use PowerShell.";
 
         public JObject InputSchema => JObject.Parse(@"{
             ""type"": ""object"",
