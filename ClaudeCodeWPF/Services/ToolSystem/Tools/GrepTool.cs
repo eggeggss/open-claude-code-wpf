@@ -66,6 +66,13 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
 
         private void SearchFiles(string searchPath, string include, Regex regex, bool recursive, int maxResults, List<string> results, CancellationToken cancellationToken)
         {
+            // Support path pointing to a single file
+            if (File.Exists(searchPath))
+            {
+                SearchInFile(searchPath, regex, maxResults, results);
+                return;
+            }
+
             var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
             var files = Directory.GetFiles(searchPath, include, searchOption);
 
@@ -73,21 +80,25 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
             {
                 if (cancellationToken.IsCancellationRequested) break;
                 if (results.Count >= maxResults) break;
+                SearchInFile(file, regex, maxResults, results);
+            }
+        }
 
-                try
+        private static void SearchInFile(string file, Regex regex, int maxResults, List<string> results)
+        {
+            try
+            {
+                var lines = File.ReadAllLines(file);
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    var lines = File.ReadAllLines(file);
-                    for (int i = 0; i < lines.Length; i++)
+                    if (regex.IsMatch(lines[i]))
                     {
-                        if (regex.IsMatch(lines[i]))
-                        {
-                            results.Add($"{file}:{i + 1}: {lines[i]}");
-                            if (results.Count >= maxResults) return;
-                        }
+                        results.Add($"{file}:{i + 1}: {lines[i]}");
+                        if (results.Count >= maxResults) return;
                     }
                 }
-                catch { /* skip unreadable files */ }
             }
+            catch { /* skip unreadable files */ }
         }
 
         private static string ResolvePath(string path) => PathHelper.Resolve(path);
