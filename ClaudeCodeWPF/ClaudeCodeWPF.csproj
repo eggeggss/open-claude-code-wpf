@@ -225,6 +225,7 @@
     <Compile Include="Utils\HttpClientFactory.cs" />
     <Compile Include="Utils\JsonHelper.cs" />
     <Compile Include="Utils\MarkdownRenderer.cs" />
+    <Compile Include="Utils\PathHelper.cs" />
     <Compile Include="Utils\ProcessRunner.cs" />
     <Compile Include="Utils\FileSystemHelper.cs" />
     <Compile Include="Utils\ValueConverters.cs" />

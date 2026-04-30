@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaudeCodeWPF.Models;
+using OpenClaudeCodeWPF.Utils;
 using Newtonsoft.Json.Linq;
 
 namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
@@ -53,11 +54,6 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
             }
         }
 
-        private string ResolvePath(string path)
-        {
-            if (!Path.IsPathRooted(path))
-                path = Path.Combine(Environment.CurrentDirectory, path);
-            return Path.GetFullPath(path);
-        }
+        private static string ResolvePath(string path) => PathHelper.Resolve(path);
     }
 }

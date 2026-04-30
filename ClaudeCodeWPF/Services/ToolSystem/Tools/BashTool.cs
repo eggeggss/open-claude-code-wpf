@@ -30,8 +30,8 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
             if (string.IsNullOrEmpty(command))
                 return ToolResult.Failure("command is required");
 
-            var timeout = input["timeout"]?.Value<int>() ?? 30000;
-            var workingDir = input["workingDir"]?.ToString() ?? Environment.CurrentDirectory;
+            var timeout = Math.Max(5000, input["timeout"]?.Value<int>() ?? 30000);
+            var workingDir = PathHelper.ResolveWorkingDir(input["workingDir"]?.ToString());
 
             try
             {

@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using OpenClaudeCodeWPF.Models;
 using OpenClaudeCodeWPF.Services;
 using OpenClaudeCodeWPF.Services.DocumentProcessing;
+using OpenClaudeCodeWPF.Utils;
 
 namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
 {
@@ -33,10 +34,8 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
             if (string.IsNullOrEmpty(path))
                 return ToolResult.Failure("file_path is required");
 
-            // Resolve path
-            if (!Path.IsPathRooted(path))
-                path = Path.Combine(Environment.CurrentDirectory, path);
-            path = Path.GetFullPath(path);
+            // Resolve path (handles ~ expansion and relative paths)
+            path = PathHelper.Resolve(path);
 
             if (!File.Exists(path))
                 return ToolResult.Failure($"File not found: {path}");

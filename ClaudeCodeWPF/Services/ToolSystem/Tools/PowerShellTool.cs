@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenClaudeCodeWPF.Models;
+using OpenClaudeCodeWPF.Utils;
 using Newtonsoft.Json.Linq;
 
 namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
@@ -45,8 +46,9 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
             if (string.IsNullOrEmpty(command))
                 return ToolResult.Failure("command is required");
 
-            var timeoutMs = Math.Min(input["timeout"]?.Value<int>() ?? 30000, 300000);
-            var workingDir = input["workingDir"]?.ToString() ?? Environment.CurrentDirectory;
+            // Enforce min 5000ms to prevent model from setting unreasonably short timeouts
+            var timeoutMs = Math.Max(5000, Math.Min(input["timeout"]?.Value<int>() ?? 30000, 300000));
+            var workingDir = PathHelper.ResolveWorkingDir(input["workingDir"]?.ToString());
 
             try
             {

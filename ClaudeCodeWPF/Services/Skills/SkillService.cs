@@ -343,6 +343,14 @@ namespace OpenClaudeCodeWPF.Services.Skills
                 if (sb.Length > 0)
                     sb.AppendLine("\n---");
                 sb.AppendLine($"### 技能：{skill.Name}");
+                // 注入技能目錄絕對路徑，讓 model 能正確存取技能相關檔案
+                // 重要：在使用 Read/Grep/Glob 工具時，必須使用此目錄的絕對路徑
+                if (!string.IsNullOrEmpty(skill.DirPath))
+                {
+                    sb.AppendLine($"[技能目錄 (Skill Directory): {skill.DirPath}]");
+                    sb.AppendLine($"[IMPORTANT: When reading files referenced in this skill, always use absolute paths starting with '{skill.DirPath}\\'. " +
+                                  $"For example, if the skill says 'references/bto.sql', use '{skill.DirPath}\\references\\bto.sql' instead.]");
+                }
                 sb.Append(skill.SystemPrompt);
             }
             return sb.ToString();
