@@ -43,6 +43,9 @@ namespace OpenClaudeCodeWPF.Services
             // Web Session
             public bool   WebHostEnabled  { get; set; } = true;
             public int    WebHostPort     { get; set; } = 80;
+            public bool   WebLoginEnabled  { get; set; } = false;
+            public string WebLoginUsername { get; set; } = "admin";
+            public string WebLoginPassword { get; set; } = "";
             // UI layout state
             public bool   SidebarCollapsed { get; set; } = true;
             public double SidebarWidth     { get; set; } = 240;
@@ -135,6 +138,22 @@ namespace OpenClaudeCodeWPF.Services
             set { _settings.WebHostPort = value; }
         }
 
+        public bool WebLoginEnabled
+        {
+            get => _settings.WebLoginEnabled;
+            set { _settings.WebLoginEnabled = value; }
+        }
+        public string WebLoginUsername
+        {
+            get => _settings.WebLoginUsername;
+            set { _settings.WebLoginUsername = value; }
+        }
+        public string WebLoginPassword
+        {
+            get => _settings.WebLoginPassword;
+            set { _settings.WebLoginPassword = value; }
+        }
+
         public bool SidebarCollapsed
         {
             get => _settings.SidebarCollapsed;
@@ -204,6 +223,9 @@ namespace OpenClaudeCodeWPF.Services
             cfg.AzureResponsesNodes = _settings.AzureResponsesNodes;
             cfg.WebHostEnabled    = _settings.WebHostEnabled;
             cfg.WebHostPort       = _settings.WebHostPort;
+            cfg.WebLoginEnabled   = _settings.WebLoginEnabled;
+            cfg.WebLoginUsername  = _settings.WebLoginUsername;
+            cfg.WebLoginPassword  = _settings.WebLoginPassword;
         }
 
         /// <summary>從 ConfigService 快照目前設定（儲存前呼叫）</summary>
@@ -231,6 +253,9 @@ namespace OpenClaudeCodeWPF.Services
             _settings.AzureResponsesNodes = cfg.AzureResponsesNodes;
             _settings.WebHostEnabled   = cfg.WebHostEnabled;
             _settings.WebHostPort      = cfg.WebHostPort;
+            _settings.WebLoginEnabled  = cfg.WebLoginEnabled;
+            _settings.WebLoginUsername = cfg.WebLoginUsername;
+            _settings.WebLoginPassword = cfg.WebLoginPassword;
         }
     }
 }

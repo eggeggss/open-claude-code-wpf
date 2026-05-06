@@ -118,6 +118,23 @@ namespace OpenClaudeCodeWPF.ViewModels
             set => Set(ref _webHostEnabled, value);
         }
 
+        private bool _webLoginEnabled;
+        public bool WebLoginEnabled
+        {
+            get => _webLoginEnabled;
+            set => Set(ref _webLoginEnabled, value);
+        }
+
+        private string _webLoginUsername;
+        public string WebLoginUsername
+        {
+            get => _webLoginUsername;
+            set => Set(ref _webLoginUsername, value);
+        }
+
+        // WebLoginPassword is handled via PasswordBox in code-behind (no binding)
+        public string WebLoginPassword { get; set; }
+
         // ── Font ──────────────────────────────────────────────────────────
         private double _fontSize;
         public double FontSize
@@ -184,6 +201,9 @@ namespace OpenClaudeCodeWPF.ViewModels
             Language        = cfg.Language;
             WebHostPortText = cfg.WebHostPort.ToString();
             WebHostEnabled  = cfg.WebHostEnabled;
+            WebLoginEnabled  = cfg.WebLoginEnabled;
+            WebLoginUsername = cfg.WebLoginUsername;
+            WebLoginPassword = cfg.WebLoginPassword;
 
             FontSize   = cfg.ChatFontSize;
             FontFamily = cfg.ChatFontFamily;
@@ -219,6 +239,10 @@ namespace OpenClaudeCodeWPF.ViewModels
             cfg.WebHostEnabled = WebHostEnabled;
             if (!WebHostEnabled)
                 WebHostService.Instance.Stop();
+
+            cfg.WebLoginEnabled  = WebLoginEnabled;
+            cfg.WebLoginUsername = WebLoginUsername?.Trim() ?? "admin";
+            cfg.WebLoginPassword = WebLoginPassword ?? "";
 
             cfg.ChatFontSize   = FontSize;
             cfg.ChatFontFamily = FontFamily ?? "Comic Sans MS";

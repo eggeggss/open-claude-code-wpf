@@ -125,6 +125,25 @@ namespace OpenClaudeCodeWPF.Services
         }
         public bool WebHostRequireToken => GetBool("WebHost.RequireToken", true);
 
+        private bool? _webLoginEnabledRuntime;
+        public bool WebLoginEnabled
+        {
+            get => _webLoginEnabledRuntime ?? GetBool("WebHost.LoginEnabled", false);
+            set => _webLoginEnabledRuntime = value;
+        }
+        private string _webLoginUsernameRuntime;
+        public string WebLoginUsername
+        {
+            get => _webLoginUsernameRuntime ?? Get("WebHost.LoginUsername", "admin");
+            set => _webLoginUsernameRuntime = value;
+        }
+        private string _webLoginPasswordRuntime;
+        public string WebLoginPassword
+        {
+            get => _webLoginPasswordRuntime ?? Get("WebHost.LoginPassword", "");
+            set => _webLoginPasswordRuntime = value;
+        }
+
         // ===== Skills =====
         public string SkillsDirectory => Get("Skills.Directory", "skills/");
 

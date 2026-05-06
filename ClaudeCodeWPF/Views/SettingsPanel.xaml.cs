@@ -27,6 +27,8 @@ namespace OpenClaudeCodeWPF.Views
                 var path = SkillService.SkillsDir;
                 SkillsDirHint.Text = "📂 " + path;
                 SkillsDirHint.ToolTip = path;
+                // PasswordBox can't use two-way binding; populate manually
+                WebLoginPasswordBox.Password = _vm.WebLoginPassword ?? "";
             };
         }
 
@@ -34,6 +36,8 @@ namespace OpenClaudeCodeWPF.Views
         {
             try
             {
+                // PasswordBox value must be pushed to ViewModel before Save
+                _vm.WebLoginPassword = WebLoginPasswordBox.Password;
                 _vm.Save();
                 DialogResult = true;
                 Close();

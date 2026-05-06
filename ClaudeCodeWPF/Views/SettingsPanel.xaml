@@ -355,6 +355,46 @@
                                   ToolTip="取消勾選即可完全停用 Web Session 功能，關閉後無法從瀏覽器連線。"/>
                     </Grid>
 
+                    <!-- 登入保護開關 -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="啟用登入保護" Style="{StaticResource FieldLabel}"/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding WebLoginEnabled, Mode=TwoWay}"
+                                  VerticalAlignment="Center"
+                                  IsEnabled="{Binding WebHostEnabled}"
+                                  ToolTip="啟用後，瀏覽器開啟 Web Session 前需輸入帳號密碼。預設關閉。"/>
+                    </Grid>
+
+                    <!-- 登入帳號 -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="登入帳號" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Grid.Column="1" Style="{StaticResource InputBox}"
+                                 Text="{Binding WebLoginUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding WebLoginEnabled}"
+                                 ToolTip="Web Session 登入帳號，預設 admin。"/>
+                    </Grid>
+
+                    <!-- 登入密碼 -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="登入密碼" Style="{StaticResource FieldLabel}"/>
+                        <PasswordBox x:Name="WebLoginPasswordBox" Grid.Column="1"
+                                     Background="#2D2D30" Foreground="#CCCCCC"
+                                     BorderBrush="#3E3E42" BorderThickness="1"
+                                     Padding="7,5" FontSize="12"
+                                     IsEnabled="{Binding WebLoginEnabled}"
+                                     ToolTip="Web Session 登入密碼。留空表示任意密碼均可通過（僅帳號驗證）。"/>
+
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="140"/>
