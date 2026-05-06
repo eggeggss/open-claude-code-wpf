@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.6-orange)
+![Version](https://img.shields.io/badge/version-0.1.7-orange)
 
 ---
 
@@ -420,6 +420,27 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.7 (2026-05-07)
+- **新增** Web 介面帳號密碼登入保護
+  - 設定面板可啟用「登入保護」，設定帳號／密碼（預設關閉）
+  - 啟用後所有 Web Session 路由需通過登入驗證，未登入自動導向 `/login`
+  - 支援登出（`/logout`），Cookie 為 HttpOnly，伺服器停止時清除所有 Token
+- **新增** Web 介面可獨立開關（設定面板 Web Session 區塊新增開關）
+  - 關閉時停止 HTTP Server，不再占用 port
+- **改善** Web 介面全面重新設計（深色專業主題）
+  - CSS 變數深色主題（`--accent: #ff7a18`）
+  - 訊息 Row 含角色 Avatar（👤 使用者右對齊 / ⚡ 助理左對齊）
+  - 內嵌 JavaScript Markdown 渲染器：標題、清單、粗斜體、連結、程式碼塊
+  - 程式碼塊：語言標籤 + hover 顯示「複製」按鈕
+  - Tool call 以可收折 `<details>` 顯示（INPUT / OUTPUT 分區）
+  - Thinking 塊以可收折 `<details>` 顯示（💭）
+  - 串流游標（`|` 閃爍，完成後消失）
+  - Textarea 自動調高（最高 200px）、Enter 送出 / Shift+Enter 換行
+  - Header 狀態點（綠色 live / 橘色脈衝 busy）
+  - SVG 送出鍵、取消按鈕（執行中才啟用）
+  - 登入頁改版：card + box-shadow + focus ring + 錯誤橫幅
+- **修正** `SettingsPanel.xaml` 登入密碼列 `<Grid>` 缺少結束標籤造成 XML 解析錯誤
 
 ### v0.1.6 (2026-04-28)
 - **新增** 自製技能（Skills）系統

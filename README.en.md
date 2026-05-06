@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.6-orange)
+![Version](https://img.shields.io/badge/version-0.1.7-orange)
 
 ---
 
@@ -379,6 +379,27 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.7 (2026-05-07)
+- **Added** Web interface username/password login protection
+  - Enable "Login Protection" in Settings with custom username/password (disabled by default)
+  - All Web Session routes require authentication when enabled; unauthenticated requests redirect to `/login`
+  - Supports logout (`/logout`); cookies are HttpOnly; all tokens cleared when the server stops
+- **Added** Web Session on/off toggle in Settings
+  - Disabling stops the HTTP server and releases the port immediately
+- **Improved** Web interface fully redesigned with a professional dark theme
+  - CSS variable dark theme (`--accent: #ff7a18`)
+  - Message rows with role avatars (👤 user right-aligned / ⚡ assistant left-aligned)
+  - Inline JavaScript Markdown renderer: headings, lists, bold/italic, links, code blocks
+  - Code blocks: language label + hover "Copy" button
+  - Tool calls shown as collapsible `<details>` (INPUT / OUTPUT sections)
+  - Thinking blocks shown as collapsible `<details>` (💭)
+  - Streaming cursor (blinking `|`, disappears on completion)
+  - Auto-resizing textarea (max 200px), Enter to send / Shift+Enter for newline
+  - Header status dot (green live / orange pulsing busy)
+  - SVG send button, Cancel button (enabled only while AI is running)
+  - Login page redesign: card with box-shadow, focus ring, error banner
+- **Fixed** `SettingsPanel.xaml` missing `</Grid>` closing tag on the login password row causing XML parse error
 
 ### v0.1.6 (2026-04-28)
 - **Added** Custom Skills system
