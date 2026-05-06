@@ -394,6 +394,7 @@
                                      Padding="7,5" FontSize="12"
                                      IsEnabled="{Binding WebLoginEnabled}"
                                      ToolTip="Web Session 登入密碼。留空表示任意密碼均可通過（僅帳號驗證）。"/>
+                    </Grid>
 
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
