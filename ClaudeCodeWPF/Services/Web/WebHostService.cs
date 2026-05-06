@@ -433,132 +433,313 @@ namespace OpenClaudeCodeWPF.Services.Web
 <head>
   <meta charset=""utf-8"">
   <meta name=""viewport"" content=""width=device-width,initial-scale=1"">
-  <title>Claude Code WPF Web Session</title>
+  <title>Open Claude Code WPF</title>
   <style>
-    body{margin:0;background:#111;color:#eee;font-family:Segoe UI,Arial,sans-serif}
-    header{height:42px;display:flex;align-items:center;gap:12px;padding:0 14px;background:#1f1f1f;border-bottom:1px solid #333}
-    #meta{color:#aaa;font-size:12px}
-    #messages{height:calc(100vh - 112px);overflow:auto;padding:18px}
-    .msg{max-width:900px;margin:0 0 12px;padding:10px 12px;border-radius:8px;white-space:pre-wrap;line-height:1.45}
-    .user{margin-left:auto;background:#0f4f8a}
-    .assistant{background:#252525;border:1px solid #333}
-    .system{background:#3a2714;color:#ffd49a}
-    .tool{font-size:12px;background:#172a17;color:#a6e3a1}
-    footer{height:69px;display:flex;gap:8px;padding:10px;background:#1f1f1f;border-top:1px solid #333}
-    textarea{flex:1;resize:none;background:#151515;color:#eee;border:1px solid #444;border-radius:6px;padding:8px;font:14px Consolas,monospace}
-    button{background:#ff7a18;color:white;border:0;border-radius:6px;padding:0 14px;cursor:pointer}
-    button.secondary{background:#5b1f1f}
-    button:disabled{opacity:.5;cursor:not-allowed}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    :root {
+      --bg: #0d0d10; --surface: #141418; --surface2: #1c1c24; --surface3: #252530;
+      --border: #2e2e3c; --accent: #ff7a18; --accent-dim: #c25a0e;
+      --text: #e2e2ea; --text-dim: #9090a8; --text-muted: #55556a;
+      --user-bg: #0e2f4e; --user-border: #1a4a70;
+      --asst-bg: #1a1a22; --code-bg: #0a0a12; --code-border: #252535;
+      --tool-bg: #0a130a; --tool-color: #6eca6e;
+      --sys-bg: #1a160a; --sys-color: #d4b060;
+      --green: #4ecb80; --red: #e06060;
+    }
+    html, body { height: 100%; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; overflow: hidden; }
+    ::-webkit-scrollbar { width: 5px } ::-webkit-scrollbar-track { background: transparent }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted) }
+
+    /* Header */
+    #header { height: 52px; min-height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 10; }
+    #app-logo { width: 28px; height: 28px; background: var(--accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    #app-name { font-weight: 700; font-size: 14px; color: var(--text); letter-spacing: 0.2px; }
+    #status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; transition: background 0.3s, box-shadow 0.3s; }
+    #status-dot.live { background: var(--green); box-shadow: 0 0 7px var(--green); }
+    #status-dot.busy { background: var(--accent); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    #session-info { font-size: 12px; color: var(--text-dim); margin-right: auto; }
+    .hdr-btn { font-size: 12px; color: var(--text-dim); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 11px; cursor: pointer; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+    .hdr-btn:hover { color: var(--text); border-color: var(--text-muted); }
+    .hdr-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .hdr-btn.danger:hover { color: var(--red); border-color: var(--red); }
+
+    /* Messages */
+    #messages { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 28px 0 12px; }
+    .msg-wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; animation: fadeUp 0.2s ease; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+    .msg-row { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 20px; }
+    .msg-row.user { flex-direction: row-reverse; }
+    .msg-avatar { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; }
+    .user .msg-avatar { background: var(--user-bg); border: 1px solid var(--user-border); }
+    .asst .msg-avatar { background: var(--surface3); border: 1px solid var(--border); }
+    .msg-body { flex: 1; min-width: 0; }
+    .msg-role { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; color: var(--text-muted); }
+    .user .msg-role { text-align: right; color: #4a90c8; }
+    .asst .msg-role { color: var(--accent); }
+    .msg-bubble { border-radius: 12px; font-size: 14px; line-height: 1.65; word-wrap: break-word; }
+    .user .msg-bubble { background: var(--user-bg); border: 1px solid var(--user-border); border-radius: 12px 4px 12px 12px; padding: 12px 16px; white-space: pre-wrap; color: #c8e0f4; }
+    .asst .msg-bubble { background: var(--asst-bg); border: 1px solid var(--border); border-radius: 4px 12px 12px 12px; padding: 14px 18px; }
+    .sys-bubble { background: var(--sys-bg); border: 1px solid #2e2810; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--sys-color); white-space: pre-wrap; margin: 0 0 12px; max-width: 860px; margin: 0 auto 12px; }
+    .tool-bubble { background: var(--tool-bg); border: 1px solid #152215; border-radius: 8px; padding: 0; font-size: 12px; color: var(--tool-color); margin: 0 0 20px; max-width: 860px; margin: 0 auto 20px; font-family: Consolas, 'Courier New', monospace; overflow: hidden; }
+    .tool-bubble summary { cursor: pointer; user-select: none; padding: 9px 14px; display: flex; align-items: center; gap: 8px; border-radius: 8px; list-style: none; }
+    .tool-bubble summary::-webkit-details-marker { display: none }
+    .tool-bubble summary::before { content: '▶'; font-size: 9px; opacity: .6; transition: transform 0.18s; }
+    .tool-bubble[open] summary::before { transform: rotate(90deg); }
+    .tool-bubble summary:hover { background: rgba(255,255,255,.04); }
+    .tool-icon { font-size: 13px; }
+    .tool-name { font-weight: 600; font-size: 12px; }
+    .tool-body { padding: 0 14px 12px; border-top: 1px solid #1e321e; margin-top: -1px; }
+    .tool-section { margin-top: 8px; }
+    .tool-label { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px; }
+    .tool-content { white-space: pre-wrap; opacity: .85; }
+
+    /* Markdown */
+    .md h1,.md h2,.md h3 { font-weight: 600; color: var(--text); margin: 16px 0 8px; line-height: 1.3; }
+    .md h1 { font-size: 18px } .md h2 { font-size: 16px } .md h3 { font-size: 15px }
+    .md p { margin: 0 0 10px } .md p:last-child { margin: 0 }
+    .md ul,.md ol { padding-left: 22px; margin: 0 0 10px } .md li { margin-bottom: 4px }
+    .md code { font-family: Consolas, 'Courier New', monospace; background: var(--code-bg); border: 1px solid var(--code-border); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+    .md pre { background: var(--code-bg); border: 1px solid var(--code-border); border-radius: 8px; margin: 12px 0; position: relative; overflow: hidden; }
+    .md pre code { background: none; border: none; padding: 0; color: #c0cce0; font-size: 13px; line-height: 1.55; display: block; overflow-x: auto; padding: 14px 16px; }
+    .md pre .lang-tag { position: absolute; top: 0; left: 0; font-size: 10px; padding: 3px 8px; background: rgba(255,255,255,.06); color: var(--text-muted); border-radius: 0 0 5px 0; font-family: Consolas, monospace; text-transform: uppercase; }
+    .md .copy-btn { position: absolute; top: 6px; right: 8px; font-size: 11px; padding: 3px 9px; background: var(--surface3); border: 1px solid var(--border); border-radius: 5px; color: var(--text-dim); cursor: pointer; opacity: 0; transition: opacity 0.15s; }
+    .md pre:hover .copy-btn { opacity: 1; }
+    .md .copy-btn:hover { background: var(--border); color: var(--text); }
+    .md .copy-btn.ok { color: var(--green); border-color: var(--green); }
+    .md strong { font-weight: 600 } .md em { color: var(--text-dim) } .md del { opacity: .6 }
+    .md blockquote { border-left: 3px solid var(--accent-dim); padding: 6px 14px; margin: 10px 0; color: var(--text-dim); background: rgba(255,122,24,.05); border-radius: 0 6px 6px 0; }
+    .md a { color: #5aafe0; text-decoration: none } .md a:hover { text-decoration: underline }
+    .md hr { border: none; border-top: 1px solid var(--border); margin: 14px 0 }
+    .md table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0 }
+    .md th,.md td { padding: 7px 12px; border: 1px solid var(--border); text-align: left }
+    .md th { background: var(--surface3); font-weight: 600 }
+    .md tr:nth-child(even) td { background: rgba(255,255,255,.025) }
+
+    /* Thinking */
+    .thinking-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; font-size: 12px; overflow: hidden; }
+    .thinking-block summary { cursor: pointer; padding: 7px 12px; color: var(--text-muted); font-style: italic; list-style: none; }
+    .thinking-block summary::-webkit-details-marker { display: none }
+    .thinking-block summary::before { content: '💭 '; }
+    .thinking-body { padding: 0 12px 10px; white-space: pre-wrap; color: var(--text-muted); font-size: 12px; }
+    .cursor { display: inline-block; width: 2px; height: 14px; background: var(--accent); margin-left: 2px; vertical-align: middle; animation: blink .75s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* Footer */
+    #footer { background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; }
+    #input-row { max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: flex-end; }
+    #input { flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font: 14px 'Segoe UI', system-ui, sans-serif; line-height: 1.55; min-height: 44px; max-height: 200px; resize: none; outline: none; transition: border-color 0.2s; overflow-y: auto; }
+    #input:focus { border-color: var(--accent); }
+    #input::placeholder { color: var(--text-muted); }
+    #send-btn { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; background: var(--accent); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    #send-btn:hover:not(:disabled) { background: var(--accent-dim); transform: scale(1.06); }
+    #send-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
   </style>
 </head>
 <body>
-  <header>
-    <strong>Open Claude Code WPF</strong>
-    <span id=""meta"">Loading...</span>
-    <button class=""secondary"" onclick=""cancelTurn()"">取消</button>
-    <a href=""/logout"" style=""margin-left:auto;font-size:12px;color:#888;text-decoration:none"" title=""登出"">登出</a>
-  </header>
-  <main id=""messages""></main>
-  <footer>
-    <textarea id=""input"" placeholder=""輸入訊息，Enter 送出，Shift+Enter 換行""></textarea>
-    <button id=""send"" onclick=""sendMessage()"">送出</button>
-  </footer>
+  <div id=""header"">
+    <div id=""app-logo"">⚡</div>
+    <span id=""app-name"">Open Claude Code WPF</span>
+    <div id=""status-dot"" title=""連線狀態""></div>
+    <span id=""session-info"">載入中…</span>
+    <button class=""hdr-btn danger"" onclick=""cancelTurn()"" id=""cancel-btn"" disabled>⏹ 取消</button>
+    <a href=""/logout"" class=""hdr-btn"">🔓 登出</a>
+  </div>
+  <div id=""messages""></div>
+  <div id=""footer"">
+    <div id=""input-row"">
+      <textarea id=""input"" rows=""1"" placeholder=""輸入訊息… (Enter 送出，Shift+Enter 換行)""></textarea>
+      <button id=""send-btn"" onclick=""sendMessage()"" title=""送出"">
+        <svg width=""18"" height=""18"" viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""2.5"" stroke-linecap=""round"" stroke-linejoin=""round""><line x1=""22"" y1=""2"" x2=""11"" y2=""13""/><polygon points=""22 2 15 22 11 13 2 9 22 2""/></svg>
+      </button>
+    </div>
+  </div>
 <script>
 const token = new URLSearchParams(location.search).get('token') || '';
 const base = location.pathname.replace(/\/$/, '');
 const qs = token ? '?token=' + encodeURIComponent(token) : '';
-const messages = document.getElementById('messages');
-const input = document.getElementById('input');
-const sendBtn = document.getElementById('send');
-let currentAssistant = null;
+const msgsEl = document.getElementById('messages');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send-btn');
+const cancelBtn = document.getElementById('cancel-btn');
+const statusDot = document.getElementById('status-dot');
+let curAsst = null, curThinkBody = null, rawText = '', streamCursor = null;
 
-function add(role, text) {
-  const div = document.createElement('div');
-  div.className = 'msg ' + role;
-  div.textContent = text || '';
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
-  return div;
+// ── Markdown ──────────────────────────────────────────────────────────
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function inline(s){
+  return esc(s)
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/~~(.+?)~~/g,'<del>$1</del>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href=""$2"" target=""_blank"" rel=""noopener"">$1</a>');
 }
-
-async function loadState() {
-  const res = await fetch(base + '/api/state' + qs);
-  const state = await res.json();
-  document.getElementById('meta').textContent =
-    state.title + ' · ' + state.provider + ' / ' + state.model;
-  messages.innerHTML = '';
-  (state.messages || []).forEach(m => {
-    if (m.role === 'tool') add('tool', '[tool] ' + (m.name || '') + '\n' + (m.content || ''));
-    else add(m.role === 'user' ? 'user' : 'assistant', m.content || '');
-  });
-  sendBtn.disabled = !!state.isRunning;
-}
-
-function connectEvents() {
-  const es = new EventSource(base + '/events' + qs);
-  es.addEventListener('user_message', e => add('user', JSON.parse(e.data).content));
-  es.addEventListener('message_start', () => { currentAssistant = add('assistant', ''); sendBtn.disabled = true; });
-  es.addEventListener('text_delta', e => {
-    const data = JSON.parse(e.data);
-    if (!currentAssistant) currentAssistant = add('assistant', '');
-    currentAssistant.textContent += data.text || '';
-    messages.scrollTop = messages.scrollHeight;
-  });
-  es.addEventListener('thinking_delta', e => {
-    const data = JSON.parse(e.data);
-    add('system', 'thinking: ' + (data.text || ''));
-  });
-  es.addEventListener('tool_started', e => {
-    const data = JSON.parse(e.data);
-    add('tool', '開始工具: ' + data.name + '\n' + data.input);
-  });
-  es.addEventListener('tool_completed', e => {
-    const data = JSON.parse(e.data);
-    add('tool', '工具完成: ' + data.name + '\n' + data.result);
-  });
-  es.addEventListener('tool_failed', e => {
-    const data = JSON.parse(e.data);
-    add('system', '工具失敗: ' + data.name + '\n' + data.error);
-  });
-  es.addEventListener('message_end', e => {
-    const data = JSON.parse(e.data);
-    if (data.isFinalTurn) sendBtn.disabled = false;
-    currentAssistant = null;
-  });
-  es.addEventListener('cancelled', () => { add('system', '已取消'); sendBtn.disabled = false; currentAssistant = null; });
-  es.addEventListener('error', e => {
-    if (e.data) add('system', JSON.parse(e.data).message || 'Error');
-    sendBtn.disabled = false;
-  });
-}
-
-async function sendMessage() {
-  if (sendBtn.disabled) return;
-  const message = input.value.trim();
-  if (!message) return;
-  input.value = '';
-  sendBtn.disabled = true;
-  const res = await fetch(base + '/api/send' + qs, {
-    method:'POST',
-    headers:{'Content-Type':'application/json; charset=utf-8'},
-    body:JSON.stringify({message})
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    add('system', text);
-    sendBtn.disabled = false;
+function md(text){
+  if(!text) return '';
+  const lines = text.split('\n'); let out='', inFence=false, lang='', fence=[], inUl=false, inOl=false, inTable=false, tableHead=false;
+  function flushLists(){ if(inUl){out+='</ul>';inUl=false;} if(inOl){out+='</ol>';inOl=false;} }
+  function flushTable(){ if(inTable){out+='</tbody></table>';inTable=false;tableHead=false;} }
+  for(let i=0;i<lines.length;i++){
+    const L=lines[i], T=L.trim();
+    if(!inFence && T.startsWith('```')){ flushLists();flushTable(); inFence=true; lang=T.slice(3).trim(); fence=[]; continue; }
+    if(inFence){ if(T.startsWith('```')){ inFence=false; const id='c'+Math.random().toString(36).slice(2); const lt=lang?`<span class=""lang-tag"">${esc(lang)}</span>`:''; out+=`<pre>${lt}<button class=""copy-btn"" data-id=""${id}"">複製</button><code id=""${id}"">${esc(fence.join('\n'))}</code></pre>`; lang=''; }else{ fence.push(L); } continue; }
+    const hm=T.match(/^(#{1,3}) (.+)/); if(hm){flushLists();flushTable();out+=`<h${hm[1].length}>${inline(hm[2])}</h${hm[1].length}>`;continue;}
+    if(/^---+$|^\*\*\*+$/.test(T)){flushLists();flushTable();out+='<hr>';continue;}
+    if(T.startsWith('> ')){flushLists();flushTable();out+=`<blockquote>${inline(T.slice(2))}</blockquote>`;continue;}
+    if(T.includes('|') && T.startsWith('|')){
+      flushLists();
+      const cells=T.split('|').slice(1,-1).map(c=>c.trim());
+      if(!inTable){ out+='<table><thead><tr>'+cells.map(c=>`<th>${inline(c)}</th>`).join('')+'</tr></thead><tbody>'; inTable=true; tableHead=true; continue; }
+      if(tableHead && cells.every(c=>/^[-:]+$/.test(c))){ tableHead=false; continue; }
+      out+='<tr>'+cells.map(c=>`<td>${inline(c)}</td>`).join('')+'</tr>'; continue;
+    }
+    flushTable();
+    const ul=L.match(/^(\s*)[-*+] (.+)/); if(ul){if(inOl){out+='</ol>';inOl=false;}if(!inUl){out+='<ul>';inUl=true;}out+=`<li>${inline(ul[2])}</li>`;continue;}
+    const ol=L.match(/^(\s*)\d+\. (.+)/); if(ol){if(inUl){out+='</ul>';inUl=false;}if(!inOl){out+='<ol>';inOl=true;}out+=`<li>${inline(ol[2])}</li>`;continue;}
+    flushLists();
+    if(T===''){out+='<p></p>';continue;}
+    out+=`<p>${inline(L)}</p>`;
   }
+  flushLists(); flushTable();
+  if(inFence) out+=`<pre><code>${esc(fence.join('\n'))}</code></pre>`;
+  return out;
 }
-
-async function cancelTurn() {
-  await fetch(base + '/api/cancel' + qs, { method:'POST' });
-}
-
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); }
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.copy-btn[data-id]');
+  if(!btn) return;
+  const code = document.getElementById(btn.dataset.id);
+  navigator.clipboard?.writeText(code?.textContent||'').catch(()=>{});
+  btn.textContent='✓'; btn.classList.add('ok');
+  setTimeout(()=>{btn.textContent='複製';btn.classList.remove('ok');}, 2000);
 });
 
-loadState().then(connectEvents).catch(err => add('system', err.message));
+// ── Add message ───────────────────────────────────────────────────────
+function addMsg(role, content, toolName){
+  if(role==='system'){
+    const d=document.createElement('div'); d.className='msg-wrap';
+    const b=document.createElement('div'); b.className='sys-bubble';
+    b.textContent=content||''; d.appendChild(b); msgsEl.appendChild(d); scrollBot(); return {bubble:b};
+  }
+  if(role==='tool'){
+    const d=document.createElement('div'); d.className='msg-wrap';
+    const det=document.createElement('details'); det.className='tool-bubble';
+    const sum=document.createElement('summary');
+    sum.innerHTML=`<span class=""tool-icon"">🔧</span><span class=""tool-name"">${esc(toolName||'Tool')}</span>`;
+    const body=document.createElement('div'); body.className='tool-body';
+    det.appendChild(sum); det.appendChild(body); d.appendChild(det); msgsEl.appendChild(d); scrollBot();
+    return {bubble:body};
+  }
+  const wrap=document.createElement('div'); wrap.className='msg-wrap';
+  const row=document.createElement('div'); row.className='msg-row '+(role==='user'?'user':'asst');
+  const av=document.createElement('div'); av.className='msg-avatar'; av.textContent=role==='user'?'👤':'⚡';
+  const body=document.createElement('div'); body.className='msg-body';
+  const rl=document.createElement('div'); rl.className='msg-role'; rl.textContent=role==='user'?'使用者':'助理';
+  const bub=document.createElement('div'); bub.className='msg-bubble'+(role==='asst'?' md':'');
+  if(role==='asst') bub.innerHTML=md(content||''); else bub.textContent=content||'';
+  body.appendChild(rl); body.appendChild(bub);
+  row.appendChild(av); row.appendChild(body); wrap.appendChild(row); msgsEl.appendChild(wrap); scrollBot();
+  return {bubble:bub};
+}
+function scrollBot(){ msgsEl.scrollTop=msgsEl.scrollHeight; }
+
+// ── Status ────────────────────────────────────────────────────────────
+function setRunning(on){
+  sendBtn.disabled=on; cancelBtn.disabled=!on;
+  statusDot.className=''; statusDot.classList.add(on?'busy':'live');
+}
+
+// ── Load state ────────────────────────────────────────────────────────
+async function loadState(){
+  const r=await fetch(base+'/api/state'+qs), s=await r.json();
+  document.getElementById('session-info').textContent=(s.title||'對話')+'  ·  '+s.provider+' / '+s.model;
+  msgsEl.innerHTML='';
+  (s.messages||[]).forEach(m=>{
+    if(m.role==='tool') addMsg('tool','[輸入]\n'+(m.input||'')+'\n\n[輸出]\n'+(m.content||''), m.name||'');
+    else addMsg(m.role==='user'?'user':'asst', m.content||'');
+  });
+  setRunning(!!s.isRunning);
+  statusDot.classList.add('live');
+}
+
+// ── SSE ───────────────────────────────────────────────────────────────
+function connectEvents(){
+  const es=new EventSource(base+'/events'+qs);
+  es.addEventListener('user_message', e=>addMsg('user', JSON.parse(e.data).content));
+  es.addEventListener('message_start', ()=>{
+    setRunning(true); rawText=''; curThinkBody=null;
+    const {bubble}=addMsg('asst',''); curAsst=bubble; curAsst.innerHTML='';
+    streamCursor=document.createElement('span'); streamCursor.className='cursor'; curAsst.appendChild(streamCursor);
+  });
+  es.addEventListener('thinking_delta', e=>{
+    if(!curAsst) return;
+    const {text}=JSON.parse(e.data);
+    if(!curThinkBody){
+      const det=document.createElement('details'); det.className='thinking-block';
+      const sum=document.createElement('summary'); sum.textContent='思考中…';
+      const div=document.createElement('div'); div.className='thinking-body';
+      det.appendChild(sum); det.appendChild(div);
+      if(streamCursor) curAsst.insertBefore(det,streamCursor); else curAsst.appendChild(det);
+      curThinkBody=div;
+    }
+    curThinkBody.textContent+=text; scrollBot();
+  });
+  es.addEventListener('text_delta', e=>{
+    const {text}=JSON.parse(e.data);
+    if(!curAsst){ const {bubble}=addMsg('asst',''); curAsst=bubble; curAsst.innerHTML=''; rawText=''; streamCursor=document.createElement('span'); streamCursor.className='cursor'; curAsst.appendChild(streamCursor); }
+    rawText+=text;
+    if(streamCursor) streamCursor.remove();
+    curAsst.innerHTML=md(rawText);
+    streamCursor=document.createElement('span'); streamCursor.className='cursor'; curAsst.appendChild(streamCursor);
+    scrollBot();
+  });
+  es.addEventListener('tool_started', e=>{
+    const {name,input}=JSON.parse(e.data);
+    const {bubble}=addMsg('tool','',name);
+    const inp=document.createElement('div'); inp.className='tool-section';
+    inp.innerHTML=`<div class=""tool-label"">INPUT</div><div class=""tool-content"">${esc(typeof input==='string'?input:JSON.stringify(input,null,2))}</div>`;
+    bubble.appendChild(inp);
+  });
+  es.addEventListener('tool_completed', e=>{
+    const {name,result}=JSON.parse(e.data);
+    const {bubble}=addMsg('tool','',name);
+    const out=document.createElement('div'); out.className='tool-section';
+    out.innerHTML=`<div class=""tool-label"">OUTPUT</div><div class=""tool-content"">${esc(result||'')}</div>`;
+    bubble.appendChild(out);
+  });
+  es.addEventListener('tool_failed', e=>{ const {name,error}=JSON.parse(e.data); addMsg('system',`工具 ""${name}"" 失敗:\n${error}`); });
+  es.addEventListener('message_end', e=>{
+    const {isFinalTurn}=JSON.parse(e.data);
+    if(streamCursor){streamCursor.remove();streamCursor=null;}
+    curAsst=null; curThinkBody=null; rawText='';
+    if(isFinalTurn) setRunning(false); scrollBot();
+  });
+  es.addEventListener('cancelled', ()=>{
+    if(streamCursor){streamCursor.remove();streamCursor=null;}
+    curAsst=null; curThinkBody=null; rawText='';
+    addMsg('system','已取消'); setRunning(false);
+  });
+  es.addEventListener('error', e=>{ if(e.data) addMsg('system',JSON.parse(e.data).message||'發生錯誤'); setRunning(false); });
+}
+
+// ── Send / Cancel ─────────────────────────────────────────────────────
+async function sendMessage(){
+  if(sendBtn.disabled) return;
+  const msg=inputEl.value.trim(); if(!msg) return;
+  inputEl.value=''; inputEl.style.height=''; setRunning(true);
+  const res=await fetch(base+'/api/send'+qs,{method:'POST',headers:{'Content-Type':'application/json; charset=utf-8'},body:JSON.stringify({message:msg})});
+  if(!res.ok){ addMsg('system',await res.text()); setRunning(false); }
+}
+async function cancelTurn(){ await fetch(base+'/api/cancel'+qs,{method:'POST'}); }
+
+// Auto-resize textarea
+inputEl.addEventListener('input',()=>{ inputEl.style.height='auto'; inputEl.style.height=Math.min(inputEl.scrollHeight,200)+'px'; });
+inputEl.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendMessage();} });
+
+loadState().then(connectEvents).catch(err=>addMsg('system',err.message));
 </script>
 </body>
 </html>";
@@ -568,7 +749,7 @@ loadState().then(connectEvents).catch(err => add('system', err.message));
         {
             var errorHtml = string.IsNullOrEmpty(errorMessage)
                 ? ""
-                : "<p class=\"error\">" + HtmlEncode(errorMessage) + "</p>";
+                : "<div class=\"err-banner\">⚠ " + HtmlEncode(errorMessage) + "</div>";
             var nextHtml = HtmlEncode(next ?? "");
             return @"<!doctype html>
 <html lang=""zh-Hant"">
@@ -577,31 +758,46 @@ loadState().then(connectEvents).catch(err => add('system', err.message));
   <meta name=""viewport"" content=""width=device-width,initial-scale=1"">
   <title>登入 – Open Claude Code WPF</title>
   <style>
-    *{box-sizing:border-box}
-    body{margin:0;background:#111;color:#eee;font-family:Segoe UI,Arial,sans-serif;
-         display:flex;align-items:center;justify-content:center;min-height:100vh}
-    .card{background:#1f1f1f;border:1px solid #333;border-radius:10px;padding:36px 40px;width:340px}
-    h1{margin:0 0 24px;font-size:18px;color:#ff7a18}
-    label{display:block;font-size:12px;color:#aaa;margin-bottom:4px}
-    input[type=text],input[type=password]{
-      width:100%;padding:9px 10px;background:#151515;color:#eee;
-      border:1px solid #444;border-radius:6px;font-size:14px;margin-bottom:16px}
-    input:focus{outline:none;border-color:#ff7a18}
-    button{width:100%;padding:10px;background:#ff7a18;color:#fff;border:0;
-           border-radius:6px;font-size:14px;cursor:pointer;margin-top:4px}
-    button:hover{background:#e06010}
-    .error{color:#f88;font-size:13px;margin-bottom:12px}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    :root { --bg:#0d0d10; --surface:#141418; --surface2:#1c1c24; --border:#2e2e3c; --accent:#ff7a18; --accent-dim:#c25a0e; --text:#e2e2ea; --text-dim:#9090a8; --text-muted:#55556a; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 42px 44px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+    .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+    .logo { width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .logo-text { font-weight: 700; font-size: 15px; line-height: 1.2; }
+    .logo-sub { font-size: 11px; color: var(--text-muted); }
+    h1 { font-size: 14px; font-weight: 600; color: var(--text-dim); margin-bottom: 24px; letter-spacing: 0.3px; }
+    .err-banner { background: rgba(200,60,60,.15); border: 1px solid rgba(200,60,60,.35); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #f08080; margin-bottom: 18px; }
+    .field { margin-bottom: 18px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.3px; text-transform: uppercase; }
+    input[type=text], input[type=password] { width: 100%; padding: 11px 13px; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 9px; font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,122,24,.15); }
+    input::placeholder { color: var(--text-muted); }
+    button[type=submit] { width: 100%; padding: 12px; background: var(--accent); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px; transition: background 0.15s, transform 0.1s; letter-spacing: 0.2px; }
+    button[type=submit]:hover { background: var(--accent-dim); }
+    button[type=submit]:active { transform: scale(.98); }
   </style>
 </head>
 <body>
   <div class=""card"">
-    <h1>🔐 Web Session 登入</h1>" + errorHtml + @"
+    <div class=""logo-row"">
+      <div class=""logo"">⚡</div>
+      <div>
+        <div class=""logo-text"">Open Claude Code WPF</div>
+        <div class=""logo-sub"">Web Session</div>
+      </div>
+    </div>
+    <h1>請輸入帳號密碼以繼續</h1>" + errorHtml + @"
     <form method=""POST"" action=""/login"">
       <input type=""hidden"" name=""next"" value=""" + nextHtml + @""">
-      <label for=""u"">帳號</label>
-      <input type=""text"" id=""u"" name=""username"" autocomplete=""username"" autofocus>
-      <label for=""p"">密碼</label>
-      <input type=""password"" id=""p"" name=""password"" autocomplete=""current-password"">
+      <div class=""field"">
+        <label for=""u"">帳號</label>
+        <input type=""text"" id=""u"" name=""username"" placeholder=""輸入帳號"" autocomplete=""username"" autofocus>
+      </div>
+      <div class=""field"">
+        <label for=""p"">密碼</label>
+        <input type=""password"" id=""p"" name=""password"" placeholder=""輸入密碼"" autocomplete=""current-password"">
+      </div>
       <button type=""submit"">登入</button>
     </form>
   </div>
