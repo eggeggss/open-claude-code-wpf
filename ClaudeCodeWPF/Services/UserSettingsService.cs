@@ -40,6 +40,9 @@ namespace OpenClaudeCodeWPF.Services
             public string AzureOpenAINodes { get; set; } = "";
             // Azure Responses API for GPT-5.x (each line: Name|Endpoint|ApiKey|Model|ApiVersion)
             public string AzureResponsesNodes { get; set; } = "";
+            // Web Session
+            public bool   WebHostEnabled  { get; set; } = true;
+            public int    WebHostPort     { get; set; } = 80;
             // UI layout state
             public bool   SidebarCollapsed { get; set; } = true;
             public double SidebarWidth     { get; set; } = 240;
@@ -120,6 +123,18 @@ namespace OpenClaudeCodeWPF.Services
             set { _settings.AzureResponsesNodes = value; }
         }
 
+        public bool WebHostEnabled
+        {
+            get => _settings.WebHostEnabled;
+            set { _settings.WebHostEnabled = value; }
+        }
+
+        public int WebHostPort
+        {
+            get => _settings.WebHostPort;
+            set { _settings.WebHostPort = value; }
+        }
+
         public bool SidebarCollapsed
         {
             get => _settings.SidebarCollapsed;
@@ -187,6 +202,8 @@ namespace OpenClaudeCodeWPF.Services
             cfg.OllamaModels      = _settings.OllamaModels;
             cfg.AzureOpenAINodes  = _settings.AzureOpenAINodes;
             cfg.AzureResponsesNodes = _settings.AzureResponsesNodes;
+            cfg.WebHostEnabled    = _settings.WebHostEnabled;
+            cfg.WebHostPort       = _settings.WebHostPort;
         }
 
         /// <summary>從 ConfigService 快照目前設定（儲存前呼叫）</summary>
@@ -212,6 +229,8 @@ namespace OpenClaudeCodeWPF.Services
             _settings.OllamaModels     = cfg.OllamaModels;
             _settings.AzureOpenAINodes = cfg.AzureOpenAINodes;
             _settings.AzureResponsesNodes = cfg.AzureResponsesNodes;
+            _settings.WebHostEnabled   = cfg.WebHostEnabled;
+            _settings.WebHostPort      = cfg.WebHostPort;
         }
     }
 }

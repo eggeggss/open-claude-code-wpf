@@ -150,6 +150,10 @@
                             Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
                             ToolTip="開啟今日對話日誌檔案"
                             Click="OpenLogButton_Click"/>
+                    <Button Content="🌐 Web" Width="62" Height="24" Margin="0,0,6,0"
+                            Background="{DynamicResource InputBoxBrush}" Foreground="{DynamicResource PrimaryTextBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                            ToolTip="用瀏覽器開啟目前對話的 Web 視窗"
+                            Click="OpenWebButton_Click"/>
                     <Button Content="新對話" Width="60" Height="24"
                             Background="{DynamicResource SendButtonBrush}" Foreground="White" BorderThickness="0"
                             Click="NewChatButton_Click"/>

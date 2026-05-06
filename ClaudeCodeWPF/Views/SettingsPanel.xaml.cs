@@ -32,9 +32,16 @@ namespace OpenClaudeCodeWPF.Views
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            _vm.Save();
-            DialogResult = true;
-            Close();
+            try
+            {
+                _vm.Save();
+                DialogResult = true;
+                Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "設定儲存失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -230,4 +237,3 @@ namespace OpenClaudeCodeWPF.Views
         }
     }
 }
-

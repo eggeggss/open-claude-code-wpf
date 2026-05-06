@@ -104,6 +104,27 @@ namespace OpenClaudeCodeWPF.Services
         // ===== MCP =====
         public string MCPConfigPath => Get("MCP.ConfigPath", "mcp-servers.json");
 
+        // ===== Web Session =====
+        private bool? _webHostEnabledRuntime;
+        public bool WebHostEnabled
+        {
+            get => _webHostEnabledRuntime ?? GetBool("WebHost.Enabled", true);
+            set => _webHostEnabledRuntime = value;
+        }
+        public string WebHostHost => Get("WebHost.Host", "0.0.0.0");
+        private int? _webHostPortRuntime;
+        public int WebHostPort
+        {
+            get => _webHostPortRuntime ?? GetInt("WebHost.Port", 80);
+            set
+            {
+                if (value < 1 || value > 65535)
+                    throw new ArgumentOutOfRangeException(nameof(value), "WebHost.Port must be between 1 and 65535.");
+                _webHostPortRuntime = value;
+            }
+        }
+        public bool WebHostRequireToken => GetBool("WebHost.RequireToken", true);
+
         // ===== Skills =====
         public string SkillsDirectory => Get("Skills.Directory", "skills/");
 

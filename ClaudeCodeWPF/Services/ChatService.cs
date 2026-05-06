@@ -48,12 +48,19 @@ namespace OpenClaudeCodeWPF.Services
             // Log user message
             LogService.Instance.LogUserMessage(session.Id, userInput);
 
-            var provider = ModelProviderFactory.Instance.GetCurrentProvider();
+            var providerName = string.IsNullOrEmpty(session.Provider)
+                ? ConfigService.Instance.CurrentProvider
+                : session.Provider;
+            var modelName = string.IsNullOrEmpty(session.Model)
+                ? ConfigService.Instance.CurrentModel
+                : session.Model;
+
+            var provider = ModelProviderFactory.Instance.GetProvider(providerName);
             var systemPrompt = SystemPromptService.Instance.GetSystemPrompt(ConfigService.Instance.Language);
             var tools = _toolRegistry.GetAllToolDefinitions();
             var parameters = new ModelParameters
             {
-                Model = ConfigService.Instance.CurrentModel,   // ← 傳入 UI 選擇的模型
+                Model = modelName,
                 MaxTokens = ConfigService.Instance.MaxTokens,
                 Temperature = ConfigService.Instance.Temperature,
                 Streaming = ConfigService.Instance.StreamingEnabled

@@ -97,7 +97,7 @@ namespace OpenClaudeCodeWPF.Services
             return _activeSession;
         }
 
-        private ConversationSession FindSession(string id)
+        public ConversationSession FindSession(string id)
         {
             foreach (var s in Sessions)
                 if (s.Id == id) return s;

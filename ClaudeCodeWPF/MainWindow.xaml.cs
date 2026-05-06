@@ -10,6 +10,7 @@ using OpenClaudeCodeWPF.Models;
 using OpenClaudeCodeWPF.Services;
 using OpenClaudeCodeWPF.Services.DocumentProcessing;
 using OpenClaudeCodeWPF.Services.MCP;
+using OpenClaudeCodeWPF.Services.Web;
 using OpenClaudeCodeWPF.ViewModels;
 
 namespace OpenClaudeCodeWPF
@@ -80,6 +81,15 @@ namespace OpenClaudeCodeWPF
             // Wire up ToolsPanel click → focus input with hint
             ToolsPanel.OnToolClicked += (toolName, desc) =>
                 Dispatcher.InvokeAsync(() => ChatPanel.InsertToolHint(toolName));
+
+            WebChatBridge.Instance.OnSessionUpdated += sessionId =>
+                Dispatcher.InvokeAsync(() =>
+                {
+                    var active = ConversationManager.Instance.ActiveSession;
+                    if (active != null && active.Id == sessionId)
+                        ChatPanel.LoadSession(active);
+                    HistoryPanel.Refresh();
+                });
         }
 
         private void HandleStreamEvent(StreamEvent evt)
@@ -155,6 +165,8 @@ namespace OpenClaudeCodeWPF
             _vm.StatusMessage = "傳送中...";
 
             var session = ConversationManager.Instance.GetOrCreateActiveSession();
+            session.Provider = ConfigService.Instance.CurrentProvider;
+            session.Model = ConfigService.Instance.CurrentModel;
 
             // Show user message in UI: original text + file names (not full content)
             var displayMsg = BuildDisplayMessage(message, files);
@@ -323,6 +335,7 @@ namespace OpenClaudeCodeWPF
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             _cts?.Cancel();
+            WebHostService.Instance.Stop();
             ConversationManager.Instance.SaveActiveSession();
             // Save current provider/model and all settings on exit
             UserSettingsService.Instance.SnapshotFromConfig();
@@ -360,10 +373,31 @@ namespace OpenClaudeCodeWPF
         {
             ConversationManager.Instance.SaveActiveSession();
             var session = ConversationManager.Instance.CreateSession();
+            session.Provider = ConfigService.Instance.CurrentProvider;
+            session.Model = ConfigService.Instance.CurrentModel;
             ChatPanel.LoadSession(session);
             ToolOutputPanel.Clear();
             HistoryPanel.Refresh();
             _vm.ClearContext();
+        }
+
+        private void OpenWebButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var session = ConversationManager.Instance.GetOrCreateActiveSession();
+                session.Provider = ConfigService.Instance.CurrentProvider;
+                session.Model = ConfigService.Instance.CurrentModel;
+                ConversationManager.Instance.SaveSession(session);
+
+                var url = WebSessionManager.Instance.OpenSessionWindow(session.Id);
+                _vm.StatusMessage = $"Web 視窗已開啟: {url}";
+            }
+            catch (Exception ex)
+            {
+                _vm.StatusMessage = $"Web 視窗啟動失敗: {ex.Message}";
+                MessageBox.Show(ex.Message, "Web 視窗啟動失敗", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)

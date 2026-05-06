@@ -160,6 +160,10 @@
     <Compile Include="Services\ConversationManager.cs" />
     <Compile Include="Services\HistoryService.cs" />
     <Compile Include="Services\SystemPromptService.cs" />
+    <Compile Include="Services\Web\WebChatBridge.cs" />
+    <Compile Include="Services\Web\WebHostService.cs" />
+    <Compile Include="Services\Web\WebSessionManager.cs" />
+    <Compile Include="Services\Web\WebSseHub.cs" />
     <Compile Include="Services\Skills\SkillService.cs" />
     <Compile Include="Services\DocumentProcessing\DocumentExtractor.cs" />
     <!-- Providers -->

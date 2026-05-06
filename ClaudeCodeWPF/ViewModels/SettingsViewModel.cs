@@ -1,5 +1,6 @@
 using System;
 using OpenClaudeCodeWPF.Services;
+using OpenClaudeCodeWPF.Services.Web;
 
 namespace OpenClaudeCodeWPF.ViewModels
 {
@@ -103,6 +104,20 @@ namespace OpenClaudeCodeWPF.ViewModels
             set => Set(ref _language, value);
         }
 
+        private string _webHostPortText;
+        public string WebHostPortText
+        {
+            get => _webHostPortText;
+            set => Set(ref _webHostPortText, value);
+        }
+
+        private bool _webHostEnabled;
+        public bool WebHostEnabled
+        {
+            get => _webHostEnabled;
+            set => Set(ref _webHostEnabled, value);
+        }
+
         // ── Font ──────────────────────────────────────────────────────────
         private double _fontSize;
         public double FontSize
@@ -167,6 +182,8 @@ namespace OpenClaudeCodeWPF.ViewModels
             MaxTokensText   = cfg.MaxTokens.ToString();
             StreamingEnabled = cfg.StreamingEnabled;
             Language        = cfg.Language;
+            WebHostPortText = cfg.WebHostPort.ToString();
+            WebHostEnabled  = cfg.WebHostEnabled;
 
             FontSize   = cfg.ChatFontSize;
             FontFamily = cfg.ChatFontFamily;
@@ -195,6 +212,13 @@ namespace OpenClaudeCodeWPF.ViewModels
 
             if (int.TryParse(MaxTokensText, out int maxTok))
                 cfg.MaxTokens = maxTok;
+
+            if (!int.TryParse(WebHostPortText, out int webPort) || webPort < 1 || webPort > 65535)
+                throw new InvalidOperationException("Web Host Port 必須是 1 到 65535 之間的整數。");
+            cfg.WebHostPort    = webPort;
+            cfg.WebHostEnabled = WebHostEnabled;
+            if (!WebHostEnabled)
+                WebHostService.Instance.Stop();
 
             cfg.ChatFontSize   = FontSize;
             cfg.ChatFontFamily = FontFamily ?? "Comic Sans MS";

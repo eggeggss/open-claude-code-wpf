@@ -336,9 +336,38 @@
                             <ComboBoxItem Style="{StaticResource DarkComboItem}"
                                           Content="繁體中文" Tag="zh-TW"/>
                             <ComboBoxItem Style="{StaticResource DarkComboItem}"
-                                          Content="English" Tag="en"/>
+                                           Content="English" Tag="en"/>
                         </ComboBox>
                     </Grid>
+
+                    <Separator Style="{StaticResource ProviderSep}"/>
+                    <TextBlock Text="Web Session" Style="{StaticResource SectionHeader}" Margin="0,0,0,6"/>
+
+                    <!-- Web 啟用開關 -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="啟用 Web Session" Style="{StaticResource FieldLabel}"/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding WebHostEnabled, Mode=TwoWay}"
+                                  VerticalAlignment="Center"
+                                  ToolTip="取消勾選即可完全停用 Web Session 功能，關閉後無法從瀏覽器連線。"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Web Port" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="WebHostPortBox" Grid.Column="1" Style="{StaticResource InputBox}"
+                                 Text="{Binding WebHostPortText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding WebHostEnabled}"
+                                 ToolTip="Web 視窗使用的 HTTP port，預設 80。若已啟動 Web server，下一次開啟 Web 視窗會套用新 port。"/>
+                    </Grid>
+                    <TextBlock Style="{StaticResource HintText}"
+                               Text="預設 80。若 Windows 權限不足或 port 被占用，請改用其他 port，或依錯誤提示設定 URL ACL。"/>
 
                 </StackPanel>
             </TabItem>
