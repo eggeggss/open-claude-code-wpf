@@ -195,7 +195,6 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
         /// <summary>執行 JS，回傳 returnValue（returnByValue=true）</summary>
         public async Task<JToken> EvaluateAsync(string expression, bool awaitPromise = false, int timeoutMs = 15000)
         {
-            await BringToFrontAsync();
             var res = await SendCommandAsync("Runtime.evaluate", new JObject
             {
                 ["expression"]    = expression,
@@ -222,10 +221,14 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
         }
 
         public async Task<string> GetPageTextAsync()
-            => (await EvaluateAsync("document.body ? document.body.innerText : ''"))?.ToString() ?? "";
+        {
+            await BringToFrontAsync();
+            return (await EvaluateAsync("document.body ? document.body.innerText : ''"))?.ToString() ?? "";
+        }
 
         public async Task<string> GetSimplifiedDomAsync()
         {
+            await BringToFrontAsync();
             const string js = @"
 (function(){
     function walk(el, depth){
@@ -321,6 +324,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
 
         public async Task<string> FindElementsAsync(string selector)
         {
+            await BringToFrontAsync();
             var js = $@"
 (function(){{
     var els=document.querySelectorAll({JsonConvert.SerializeObject(selector)});

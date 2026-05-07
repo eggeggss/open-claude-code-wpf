@@ -28,6 +28,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
             if (!svc.IsConnected) return ToolResult.Failure("尚未連接 CDP，請先執行 browser_connect");
             try
             {
+                await svc.BringToFrontAsync();
                 var awaitPromise = input["await_promise"]?.Value<bool>() ?? false;
                 var result = await svc.EvaluateAsync(script, awaitPromise);
                 return ToolResult.Success(result != null ? result.ToString() : "(無回傳值)");

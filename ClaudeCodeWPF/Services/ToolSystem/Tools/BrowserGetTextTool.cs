@@ -28,6 +28,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
             if (!svc.IsConnected) return ToolResult.Failure("尚未連接 CDP，請先執行 browser_connect");
             try
             {
+                await svc.BringToFrontAsync();
                 await svc.UpdatePageInfoAsync();
                 var header = $"頁面: {svc.CurrentTitle}\nURL: {svc.CurrentUrl}\n\n";
                 var mode   = input["mode"]?.ToString() ?? "text";

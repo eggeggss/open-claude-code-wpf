@@ -63,8 +63,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
                     UseShellExecute = false
                 });
 
-                await Task.Delay(600);
-                BrowserWindowActivator.TryBringToFront(null);
+                await BringBrowserToFrontAfterLaunchAsync(cancellationToken);
 
                 return ToolResult.Success($"已在 Edge 開啟：{url}");
             }
@@ -78,8 +77,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
                         FileName = url,
                         UseShellExecute = true
                     });
-                    await Task.Delay(600);
-                    BrowserWindowActivator.TryBringToFront(null);
+                    await BringBrowserToFrontAfterLaunchAsync(cancellationToken);
 
                     return ToolResult.Success($"已開啟：{url}");
                 }
@@ -87,6 +85,17 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
                 {
                     return ToolResult.Failure($"無法開啟 Edge：{ex.Message}");
                 }
+            }
+        }
+
+        private static async Task BringBrowserToFrontAfterLaunchAsync(CancellationToken cancellationToken)
+        {
+            var delays = new[] { 500, 1000, 1500 };
+            foreach (var delay in delays)
+            {
+                await Task.Delay(delay, cancellationToken);
+                if (BrowserWindowActivator.TryBringToFront(null))
+                    return;
             }
         }
 
