@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.7-orange)
+![Version](https://img.shields.io/badge/version-0.1.8-orange)
 
 ---
 
@@ -379,6 +379,14 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.8 (2026-05-08)
+- **Added** Browser Tool foreground activation
+  - After `browser_connect` succeeds, the target tab is brought to the front via CDP `Page.bringToFront`
+  - `browser_navigate`, `browser_click`, `browser_fill`, `browser_select`, `browser_type`, `browser_screenshot`, and related browser operations now try to foreground the browser before interacting
+  - Added a Windows Win32 foreground helper using `ShowWindowAsync`, `SetForegroundWindow`, and `AttachThreadInput` to bring Edge/Chrome to the top
+  - Minimized browser windows are restored before being brought to the foreground
+- **Improved** `OpenEdge` now attempts to foreground Edge immediately after opening a tab/window
 
 ### v0.1.7 (2026-05-07)
 - **Added** Web interface username/password login protection

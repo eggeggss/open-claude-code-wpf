@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenClaudeCodeWPF.Models;
 using Newtonsoft.Json.Linq;
+using OpenClaudeCodeWPF.Services.ToolSystem.Browser;
 
 namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
 {
@@ -34,7 +35,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
             ""required"": []
         }");
 
-        public Task<ToolResult> ExecuteAsync(JObject input, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ToolResult> ExecuteAsync(JObject input, CancellationToken cancellationToken = default(CancellationToken))
         {
             var url = input["url"]?.ToString()?.Trim();
             var newWindow = input["newWindow"]?.Value<bool>() ?? false;
@@ -62,7 +63,10 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
                     UseShellExecute = false
                 });
 
-                return Task.FromResult(ToolResult.Success($"已在 Edge 開啟：{url}"));
+                await Task.Delay(600);
+                BrowserWindowActivator.TryBringToFront(null);
+
+                return ToolResult.Success($"已在 Edge 開啟：{url}");
             }
             catch (Exception ex)
             {
@@ -74,11 +78,14 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Tools
                         FileName = url,
                         UseShellExecute = true
                     });
-                    return Task.FromResult(ToolResult.Success($"已開啟：{url}"));
+                    await Task.Delay(600);
+                    BrowserWindowActivator.TryBringToFront(null);
+
+                    return ToolResult.Success($"已開啟：{url}");
                 }
                 catch
                 {
-                    return Task.FromResult(ToolResult.Failure($"無法開啟 Edge：{ex.Message}"));
+                    return ToolResult.Failure($"無法開啟 Edge：{ex.Message}");
                 }
             }
         }

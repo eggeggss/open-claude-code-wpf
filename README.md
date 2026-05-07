@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.7-orange)
+![Version](https://img.shields.io/badge/version-0.1.8-orange)
 
 ---
 
@@ -420,6 +420,14 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.8 (2026-05-08)
+- **新增** Browser Tool 操作時自動將瀏覽器帶到前景
+  - `browser_connect` 連接成功後會透過 CDP `Page.bringToFront` 將目標分頁切到前景
+  - `browser_navigate`、`browser_click`、`browser_fill`、`browser_select`、`browser_type`、`browser_screenshot` 等操作前會嘗試喚起瀏覽器
+  - Windows 端新增 Win32 視窗前景化輔助，使用 `ShowWindowAsync`、`SetForegroundWindow`、`AttachThreadInput` 嘗試將 Edge/Chrome 視窗拉到最上層
+  - 若瀏覽器最小化，會先還原視窗再帶到前景
+- **改善** `OpenEdge` 工具開啟 Edge 後會嘗試立即顯示在前景
 
 ### v0.1.7 (2026-05-07)
 - **新增** Web 介面帳號密碼登入保護

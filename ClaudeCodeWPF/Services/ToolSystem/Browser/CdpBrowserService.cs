@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OpenClaudeCodeWPF.Services;
 
 namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
 {
@@ -114,6 +115,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
 
             await SendCommandAsync("Page.enable", null, 5000);
             await UpdatePageInfoAsync();
+            await BringToFrontAsync();
         }
 
         public async Task DisconnectAsync()
@@ -155,17 +157,45 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
         }
 
         // ── High-level helpers ────────────────────────────────────────────────
+        public async Task BringToFrontAsync()
+        {
+            if (!IsConnected)
+                return;
+
+            try
+            {
+                await SendCommandAsync("Page.bringToFront", null, 3000);
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.LogError("browser_foreground_cdp", ex.Message);
+            }
+
+            try
+            {
+                if (!BrowserWindowActivator.TryBringToFront(CurrentTitle))
+                    LogService.Instance.LogError("browser_foreground_window", "找不到可帶到前景的 Edge/Chrome 視窗");
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.LogError("browser_foreground_window", ex.Message);
+            }
+        }
+
         public async Task<string> NavigateAsync(string url)
         {
+            await BringToFrontAsync();
             await SendCommandAsync("Page.navigate", new JObject { ["url"] = url });
             await Task.Delay(1800); // wait for page load
             await UpdatePageInfoAsync();
+            await BringToFrontAsync();
             return $"已導航至: {CurrentTitle}\nURL: {CurrentUrl}";
         }
 
         /// <summary>執行 JS，回傳 returnValue（returnByValue=true）</summary>
         public async Task<JToken> EvaluateAsync(string expression, bool awaitPromise = false, int timeoutMs = 15000)
         {
+            await BringToFrontAsync();
             var res = await SendCommandAsync("Runtime.evaluate", new JObject
             {
                 ["expression"]    = expression,
@@ -226,6 +256,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
 
         public async Task<string> ClickAsync(string selector)
         {
+            await BringToFrontAsync();
             var js = $@"
 (function(){{
     var el=document.querySelector({JsonConvert.SerializeObject(selector)});
@@ -242,6 +273,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
 
         public async Task<string> FillAsync(string selector, string value)
         {
+            await BringToFrontAsync();
             var js = $@"
 (function(){{
     var el=document.querySelector({JsonConvert.SerializeObject(selector)});
@@ -264,6 +296,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
 
         public async Task<string> SelectAsync(string selector, string value)
         {
+            await BringToFrontAsync();
             var js = $@"
 (function(){{
     var el=document.querySelector({JsonConvert.SerializeObject(selector)});
@@ -312,12 +345,14 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
 
         public async Task<string> ScrollAsync(int x, int y)
         {
+            await BringToFrontAsync();
             await EvaluateAsync($"window.scrollBy({x},{y})");
             return $"已滾動 x={x} y={y}";
         }
 
         public async Task<string> TypeTextAsync(string text)
         {
+            await BringToFrontAsync();
             // Dispatch keypress events on focused element
             foreach (var ch in text)
             {
@@ -343,6 +378,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
 
         public async Task<string> PressKeyAsync(string key)
         {
+            await BringToFrontAsync();
             // key = "Enter", "Tab", "Escape", etc.
             await SendCommandAsync("Input.dispatchKeyEvent", new JObject
             {
@@ -361,6 +397,7 @@ namespace OpenClaudeCodeWPF.Services.ToolSystem.Browser
 
         public async Task<string> CaptureScreenshotAsync(string savePath = null)
         {
+            await BringToFrontAsync();
             var res  = await SendCommandAsync("Page.captureScreenshot", new JObject { ["format"] = "png" }, 30000);
             var data = res["result"]?["data"]?.ToString();
             if (data == null) throw new Exception("截圖失敗");

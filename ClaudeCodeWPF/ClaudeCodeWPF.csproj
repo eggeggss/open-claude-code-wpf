@@ -193,6 +193,7 @@
     <Compile Include="Services\ToolSystem\Tools\WebSearchTool.cs" />
     <Compile Include="Services\ToolSystem\Tools\ReadDocumentTool.cs" />
     <!-- Browser Automation (Chrome DevTools Protocol) -->
+    <Compile Include="Services\ToolSystem\Browser\BrowserWindowActivator.cs" />
     <Compile Include="Services\ToolSystem\Browser\CdpBrowserService.cs" />
     <Compile Include="Services\ToolSystem\Tools\BrowserConnectTool.cs" />
     <Compile Include="Services\ToolSystem\Tools\BrowserNavigateTool.cs" />
