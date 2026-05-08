@@ -503,7 +503,7 @@ namespace OpenClaudeCodeWPF.Services.Web
     .md ul,.md ol { padding-left: 22px; margin: 0 0 10px } .md li { margin-bottom: 4px }
     .md code { font-family: Consolas, 'Courier New', monospace; background: var(--code-bg); border: 1px solid var(--code-border); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
     .md pre { background: var(--code-bg); border: 1px solid var(--code-border); border-radius: 8px; margin: 12px 0; position: relative; overflow: hidden; }
-    .md pre code { background: none; border: none; padding: 0; color: #c0cce0; font-size: 13px; line-height: 1.55; display: block; overflow-x: auto; padding: 14px 16px; }
+    .md pre code { background: none; border: none; padding: 0; color: #c0cce0; font-size: 13px; line-height: 1.55; display: block; overflow-x: auto; white-space: pre; padding: 14px 16px; }
     .md pre .lang-tag { position: absolute; top: 0; left: 0; font-size: 10px; padding: 3px 8px; background: rgba(255,255,255,.06); color: var(--text-muted); border-radius: 0 0 5px 0; font-family: Consolas, monospace; text-transform: uppercase; }
     .md .copy-btn { position: absolute; top: 6px; right: 8px; font-size: 11px; padding: 3px 9px; background: var(--surface3); border: 1px solid var(--border); border-radius: 5px; color: var(--text-dim); cursor: pointer; opacity: 0; transition: opacity 0.15s; }
     .md pre:hover .copy-btn { opacity: 1; }
@@ -571,15 +571,39 @@ let curAsst = null, curThinkBody = null, rawText = '', streamCursor = null;
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function inline(s){
   return esc(s)
-    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/(^|[^`])`([^`\n]+)`(?!`)/g,'$1<code>$2</code>')
     .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
     .replace(/~~(.+?)~~/g,'<del>$1</del>')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href=""$2"" target=""_blank"" rel=""noopener"">$1</a>');
 }
+function normalizeFences(text){
+  text = String(text || '').replace(/\r\n?/g, '\n');
+  let out = '', i = 0, inFence = false, lineHasText = false;
+  while(i < text.length){
+    if(text.slice(i, i + 3) === '```'){
+      if(!inFence && lineHasText) out += '\n';
+      out += '```';
+      i += 3;
+      inFence = !inFence;
+      lineHasText = true;
+      if(!inFence && i < text.length && text[i] !== '\n') {
+        out += '\n';
+        lineHasText = false;
+      }
+      continue;
+    }
+    const ch = text[i++];
+    out += ch;
+    if(ch === '\n') lineHasText = false;
+    else if(!/\s/.test(ch)) lineHasText = true;
+  }
+  return out;
+}
 function md(text){
   if(!text) return '';
+  text = normalizeFences(text);
   const lines = text.split('\n'); let out='', inFence=false, lang='', fence=[], inUl=false, inOl=false, inTable=false, tableHead=false;
   function flushLists(){ if(inUl){out+='</ul>';inUl=false;} if(inOl){out+='</ol>';inOl=false;} }
   function flushTable(){ if(inTable){out+='</tbody></table>';inTable=false;tableHead=false;} }
