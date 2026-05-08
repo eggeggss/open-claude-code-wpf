@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.8-orange)
+![Version](https://img.shields.io/badge/version-0.1.9-orange)
 
 ---
 
@@ -379,6 +379,17 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.9 (2026-05-09)
+- **Added** Keep Awake toggle to prevent sleep/screensaver
+  - Added `PowerManagementService` using Windows `SetThreadExecutionState` to keep the system and display awake
+  - The option can be toggled from Settings and is persisted in user settings
+  - Power state is restored automatically when the main window closes
+- **Fixed** Web Markdown fenced code block rendering mismatch
+  - Fixed code blocks being split incorrectly when paragraph text and ``` fenced code appear on the same line
+  - Prevented the inline-code regex from consuming triple backticks
+  - Code blocks now use `white-space: pre` to preserve original newlines and indentation
+  - The copy button copies only the raw `<code>` content, excluding language labels, buttons, or misplaced paragraph text
 
 ### v0.1.8 (2026-05-08)
 - **Added** Browser Tool foreground activation

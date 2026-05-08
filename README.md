@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.8-orange)
+![Version](https://img.shields.io/badge/version-0.1.9-orange)
 
 ---
 
@@ -420,6 +420,17 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.9 (2026-05-09)
+- **新增** 防止睡眠／螢幕保護程式的 Keep Awake 開關
+  - 新增 `PowerManagementService`，可透過 Windows `SetThreadExecutionState` 維持系統與螢幕喚醒
+  - 設定面板可開關此功能，並會寫入使用者設定
+  - 主視窗關閉時會自動還原系統電源狀態
+- **修正** Web 版 Markdown fenced code block 解析錯位
+  - 修正段落文字與 ``` fenced code 黏在同一行時，Web 端把 code block 切錯的問題
+  - 避免 inline code regex 誤吃三個反引號
+  - Code block 使用 `white-space: pre` 保留原始換行與縮排
+  - 複製按鈕只複製 `<code>` 內的原始程式碼內容，不包含語言標籤、按鈕或錯位段落文字
 
 ### v0.1.8 (2026-05-08)
 - **新增** Browser Tool 操作時自動將瀏覽器帶到前景
