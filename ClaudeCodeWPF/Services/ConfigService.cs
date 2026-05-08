@@ -147,6 +147,14 @@ namespace OpenClaudeCodeWPF.Services
         // ===== Skills =====
         public string SkillsDirectory => Get("Skills.Directory", "skills/");
 
+        // ===== Power Management =====
+        private bool? _preventScreensaverEnabledRuntime;
+        public bool PreventScreensaverEnabled
+        {
+            get => _preventScreensaverEnabledRuntime ?? GetBool("Power.PreventScreensaver", false);
+            set => _preventScreensaverEnabledRuntime = value;
+        }
+
         // ===== 執行時期可修改（不持久化到 App.config）=====
         private bool? _streamingEnabledRuntime;
         public bool StreamingEnabled

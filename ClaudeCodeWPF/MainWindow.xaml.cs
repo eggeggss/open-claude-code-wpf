@@ -277,6 +277,9 @@ namespace OpenClaudeCodeWPF
             // Restore persisted settings into ConfigService
             UserSettingsService.Instance.ApplyToConfig();
 
+            // Apply keep-awake based on saved setting
+            PowerManagementService.Instance.Apply(ConfigService.Instance.PreventScreensaverEnabled);
+
             // Apply saved theme (must run before UI is shown)
             ThemeService.Apply(ConfigService.Instance.ThemeName);
 
@@ -335,6 +338,7 @@ namespace OpenClaudeCodeWPF
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             _cts?.Cancel();
+            PowerManagementService.Instance.DisableKeepAwake();
             WebHostService.Instance.Stop();
             ConversationManager.Instance.SaveActiveSession();
             // Save current provider/model and all settings on exit

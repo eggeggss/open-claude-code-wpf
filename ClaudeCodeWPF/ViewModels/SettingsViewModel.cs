@@ -97,6 +97,13 @@ namespace OpenClaudeCodeWPF.ViewModels
             set => Set(ref _streamingEnabled, value);
         }
 
+        private bool _preventScreensaverEnabled;
+        public bool PreventScreensaverEnabled
+        {
+            get => _preventScreensaverEnabled;
+            set => Set(ref _preventScreensaverEnabled, value);
+        }
+
         private string _language;
         public string Language
         {
@@ -198,6 +205,7 @@ namespace OpenClaudeCodeWPF.ViewModels
             Temperature     = cfg.Temperature;
             MaxTokensText   = cfg.MaxTokens.ToString();
             StreamingEnabled = cfg.StreamingEnabled;
+            PreventScreensaverEnabled = cfg.PreventScreensaverEnabled;
             Language        = cfg.Language;
             WebHostPortText = cfg.WebHostPort.ToString();
             WebHostEnabled  = cfg.WebHostEnabled;
@@ -228,6 +236,8 @@ namespace OpenClaudeCodeWPF.ViewModels
 
             cfg.Temperature      = Temperature;
             cfg.StreamingEnabled = StreamingEnabled;
+            cfg.PreventScreensaverEnabled = PreventScreensaverEnabled;
+            PowerManagementService.Instance.Apply(PreventScreensaverEnabled);
             cfg.Language         = Language ?? "zh-TW";
 
             if (int.TryParse(MaxTokensText, out int maxTok))

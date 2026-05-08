@@ -145,6 +145,7 @@
     <Compile Include="ViewModels\ChatViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <!-- Services -->
+    <Compile Include="Services\PowerManagementService.cs" />
     <Compile Include="Services\IModelProvider.cs" />
     <Compile Include="Services\ModelProviderFactory.cs" />
     <Compile Include="Services\FunctionCallingAdapter.cs" />

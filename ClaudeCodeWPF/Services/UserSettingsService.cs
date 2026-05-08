@@ -49,6 +49,8 @@ namespace OpenClaudeCodeWPF.Services
             // UI layout state
             public bool   SidebarCollapsed { get; set; } = true;
             public double SidebarWidth     { get; set; } = 240;
+            // Power management
+            public bool   PreventScreensaverEnabled { get; set; } = false;
         }
 
         private UserSettings _settings;
@@ -166,6 +168,12 @@ namespace OpenClaudeCodeWPF.Services
             set { _settings.SidebarWidth = value; }
         }
 
+        public bool PreventScreensaverEnabled
+        {
+            get => _settings.PreventScreensaverEnabled;
+            set { _settings.PreventScreensaverEnabled = value; }
+        }
+
         // ── Persistence ─────────────────────────────────────────────────────
 
         private UserSettings Load()
@@ -226,6 +234,7 @@ namespace OpenClaudeCodeWPF.Services
             cfg.WebLoginEnabled   = _settings.WebLoginEnabled;
             cfg.WebLoginUsername  = _settings.WebLoginUsername;
             cfg.WebLoginPassword  = _settings.WebLoginPassword;
+            cfg.PreventScreensaverEnabled = _settings.PreventScreensaverEnabled;
         }
 
         /// <summary>從 ConfigService 快照目前設定（儲存前呼叫）</summary>
@@ -256,6 +265,7 @@ namespace OpenClaudeCodeWPF.Services
             _settings.WebLoginEnabled  = cfg.WebLoginEnabled;
             _settings.WebLoginUsername = cfg.WebLoginUsername;
             _settings.WebLoginPassword = cfg.WebLoginPassword;
+            _settings.PreventScreensaverEnabled = cfg.PreventScreensaverEnabled;
         }
     }
 }

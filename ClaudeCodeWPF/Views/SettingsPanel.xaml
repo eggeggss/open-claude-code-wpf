@@ -328,6 +328,20 @@
                             <ColumnDefinition Width="140"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
+                        <TextBlock Text="防止螢幕保護程式" Style="{StaticResource FieldLabel}"/>
+                        <CheckBox Grid.Column="1"
+                                  Foreground="#CCCCCC" FontSize="12"
+                                  Content="保持喚醒，防止螢幕保護程式、關閉螢幕與系統睡眠"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding PreventScreensaverEnabled, Mode=TwoWay}"
+                                  ToolTip="使用 Windows SetThreadExecutionState API 防止螢幕保護程式與系統睡眠。與瀏覽器前景功能完全獨立。"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="語言" Style="{StaticResource FieldLabel}"/>
                         <ComboBox x:Name="LanguageCombo" Grid.Column="1"
                                   Style="{StaticResource DarkCombo}"
