@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.9-orange)
+![Version](https://img.shields.io/badge/version-0.1.10-orange)
 
 ---
 
@@ -420,6 +420,16 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.10 (2026-05-12)
+- **改善** Web 介面在 AI 回應完成後自動同步最新狀態
+  - 收到最終 `message_end` 後會重新讀取 `/api/state`，讓畫面與伺服器端保存的對話內容保持一致
+  - 若伺服器仍回報 running，會短暫重試並在完成後做一次確認刷新
+- **修正** Web 版 Markdown code block 複製偶發失效
+  - 在非安全 HTTP/LAN 環境中，`navigator.clipboard` 不可用時會 fallback 到 textarea + `execCommand('copy')`
+  - 複製來源改為優先使用 `data-id`，找不到時使用最近的 `<pre><code>`，避免 ID 或重繪造成失效
+  - 複製失敗時會顯示「失敗」，不再誤顯示成功
+  - 未閉合的 fenced code block 也會顯示複製按鈕
 
 ### v0.1.9 (2026-05-09)
 - **新增** 防止睡眠／螢幕保護程式的 Keep Awake 開關

@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-purple)
 ![Language](https://img.shields.io/badge/language-C%23%207.3-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.9-orange)
+![Version](https://img.shields.io/badge/version-0.1.10-orange)
 
 ---
 
@@ -379,6 +379,16 @@ MIT
 ---
 
 ## Changelog
+
+### v0.1.10 (2026-05-12)
+- **Improved** Web UI state synchronization after AI responses complete
+  - After the final `message_end`, the client reloads `/api/state` so the page matches the server-persisted conversation
+  - If the server still reports a running turn, the client retries briefly and performs one confirmation refresh after completion
+- **Fixed** intermittent Markdown code block copy failures in the Web UI
+  - Falls back to textarea + `execCommand('copy')` when `navigator.clipboard` is unavailable in non-secure HTTP/LAN contexts
+  - Copy source now prefers `data-id` and falls back to the nearest `<pre><code>` to avoid failures caused by redraws or missing IDs
+  - Copy failures now show "失敗" instead of reporting success
+  - Unterminated fenced code blocks also render with a copy button
 
 ### v0.1.9 (2026-05-09)
 - **Added** Keep Awake toggle to prevent sleep/screensaver
