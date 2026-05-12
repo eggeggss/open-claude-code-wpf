@@ -509,6 +509,7 @@ namespace OpenClaudeCodeWPF.Services.Web
     .md pre:hover .copy-btn { opacity: 1; }
     .md .copy-btn:hover { background: var(--border); color: var(--text); }
     .md .copy-btn.ok { color: var(--green); border-color: var(--green); }
+    .md .copy-btn.err { color: var(--red); border-color: var(--red); opacity: 1; }
     .md strong { font-weight: 600 } .md em { color: var(--text-dim) } .md del { opacity: .6 }
     .md blockquote { border-left: 3px solid var(--accent-dim); padding: 6px 14px; margin: 10px 0; color: var(--text-dim); background: rgba(255,122,24,.05); border-radius: 0 6px 6px 0; }
     .md a { color: #5aafe0; text-decoration: none } .md a:hover { text-decoration: underline }
@@ -565,7 +566,7 @@ const inputEl = document.getElementById('input');
 const sendBtn = document.getElementById('send-btn');
 const cancelBtn = document.getElementById('cancel-btn');
 const statusDot = document.getElementById('status-dot');
-let curAsst = null, curThinkBody = null, rawText = '', streamCursor = null;
+let curAsst = null, curThinkBody = null, rawText = '', streamCursor = null, refreshTimer = null;
 
 // ── Markdown ──────────────────────────────────────────────────────────
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -601,6 +602,11 @@ function normalizeFences(text){
   }
   return out;
 }
+function codeBlockHtml(lang, text){
+  const id='c'+Math.random().toString(36).slice(2);
+  const lt=lang?`<span class=""lang-tag"">${esc(lang)}</span>`:'';
+  return `<pre>${lt}<button type=""button"" class=""copy-btn"" data-id=""${id}"">複製</button><code id=""${id}"">${esc(text)}</code></pre>`;
+}
 function md(text){
   if(!text) return '';
   text = normalizeFences(text);
@@ -610,7 +616,7 @@ function md(text){
   for(let i=0;i<lines.length;i++){
     const L=lines[i], T=L.trim();
     if(!inFence && T.startsWith('```')){ flushLists();flushTable(); inFence=true; lang=T.slice(3).trim(); fence=[]; continue; }
-    if(inFence){ if(T.startsWith('```')){ inFence=false; const id='c'+Math.random().toString(36).slice(2); const lt=lang?`<span class=""lang-tag"">${esc(lang)}</span>`:''; out+=`<pre>${lt}<button class=""copy-btn"" data-id=""${id}"">複製</button><code id=""${id}"">${esc(fence.join('\n'))}</code></pre>`; lang=''; }else{ fence.push(L); } continue; }
+    if(inFence){ if(T.startsWith('```')){ inFence=false; out+=codeBlockHtml(lang, fence.join('\n')); lang=''; }else{ fence.push(L); } continue; }
     const hm=T.match(/^(#{1,3}) (.+)/); if(hm){flushLists();flushTable();out+=`<h${hm[1].length}>${inline(hm[2])}</h${hm[1].length}>`;continue;}
     if(/^---+$|^\*\*\*+$/.test(T)){flushLists();flushTable();out+='<hr>';continue;}
     if(T.startsWith('> ')){flushLists();flushTable();out+=`<blockquote>${inline(T.slice(2))}</blockquote>`;continue;}
@@ -629,16 +635,30 @@ function md(text){
     out+=`<p>${inline(L)}</p>`;
   }
   flushLists(); flushTable();
-  if(inFence) out+=`<pre><code>${esc(fence.join('\n'))}</code></pre>`;
+  if(inFence) out+=codeBlockHtml(lang, fence.join('\n'));
   return out;
 }
-document.addEventListener('click', e => {
-  const btn = e.target.closest('.copy-btn[data-id]');
+async function copyText(text){
+  if(!text) return false;
+  if(navigator.clipboard && window.isSecureContext){
+    try { await navigator.clipboard.writeText(text); return true; } catch { }
+  }
+  const ta=document.createElement('textarea');
+  ta.value=text; ta.setAttribute('readonly','');
+  ta.style.position='fixed'; ta.style.left='-9999px'; ta.style.top='0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { return document.execCommand('copy'); }
+  catch { return false; }
+  finally { document.body.removeChild(ta); }
+}
+document.addEventListener('click', async e => {
+  const btn = e.target.closest('.copy-btn');
   if(!btn) return;
-  const code = document.getElementById(btn.dataset.id);
-  navigator.clipboard?.writeText(code?.textContent||'').catch(()=>{});
-  btn.textContent='✓'; btn.classList.add('ok');
-  setTimeout(()=>{btn.textContent='複製';btn.classList.remove('ok');}, 2000);
+  const code = (btn.dataset.id && document.getElementById(btn.dataset.id)) || btn.closest('pre')?.querySelector('code');
+  const ok = await copyText(code?.textContent||'');
+  btn.textContent=ok?'✓':'失敗'; btn.classList.toggle('ok',ok); btn.classList.toggle('err',!ok);
+  setTimeout(()=>{btn.textContent='複製';btn.classList.remove('ok','err');}, 2000);
 });
 
 // ── Add message ───────────────────────────────────────────────────────
@@ -687,6 +707,21 @@ async function loadState(){
   });
   setRunning(!!s.isRunning);
   statusDot.classList.add('live');
+  return s;
+}
+function scheduleStateRefresh(delay, attempt){
+  if(refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer=setTimeout(async()=>{
+    refreshTimer=null;
+    try {
+      const s=await loadState();
+      const n=attempt||0;
+      if(n<4 && (s.isRunning || n===0)) scheduleStateRefresh(s.isRunning?500:900, n+1);
+    } catch(err) {
+      addMsg('system','重新整理 Web 狀態失敗: '+(err.message||err));
+      setRunning(false);
+    }
+  }, delay||350);
 }
 
 // ── SSE ───────────────────────────────────────────────────────────────
@@ -694,6 +729,7 @@ function connectEvents(){
   const es=new EventSource(base+'/events'+qs);
   es.addEventListener('user_message', e=>addMsg('user', JSON.parse(e.data).content));
   es.addEventListener('message_start', ()=>{
+    if(refreshTimer){clearTimeout(refreshTimer);refreshTimer=null;}
     setRunning(true); rawText=''; curThinkBody=null;
     const {bubble}=addMsg('asst',''); curAsst=bubble; curAsst.innerHTML='';
     streamCursor=document.createElement('span'); streamCursor.className='cursor'; curAsst.appendChild(streamCursor);
@@ -739,7 +775,7 @@ function connectEvents(){
     const {isFinalTurn}=JSON.parse(e.data);
     if(streamCursor){streamCursor.remove();streamCursor=null;}
     curAsst=null; curThinkBody=null; rawText='';
-    if(isFinalTurn) setRunning(false); scrollBot();
+    if(isFinalTurn){ setRunning(false); scheduleStateRefresh(350, 0); } scrollBot();
   });
   es.addEventListener('cancelled', ()=>{
     if(streamCursor){streamCursor.remove();streamCursor=null;}
